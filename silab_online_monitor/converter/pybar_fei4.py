@@ -20,6 +20,7 @@ class PybarFEI4(Transceiver):
         self.histograming.create_tdc_hist(True)
 
     def interpret_data(self, data):
+        data = data[0]  # only one receiver expected
         try:
             self.meta_data = jsonapi.loads(data)
         except ValueError:
@@ -50,4 +51,4 @@ class PybarFEI4(Transceiver):
         return interpreted_data
 
     def serialze_data(self, data):
-        return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+        return [jsonapi.dumps(data, cls=utils.NumpyEncoder)]

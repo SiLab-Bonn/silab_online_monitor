@@ -13,8 +13,7 @@ from PyQt4.QtGui import QApplication
 from online_monitor.utils import settings
 from online_monitor import OnlineMonitor
 
-producer_path = r'online_monitor/utils/producer_sim.py'
-converter_manager_path = r'online_monitor/start_converter.py'
+producer_path = r'silab_online_monitor/producer_sim/pybar_fei4.py'
 
 
 # creates a yaml config describing n_converter of type forwarder that are
@@ -23,35 +22,37 @@ def create_config_yaml():
     conf = {}
     # Add producer
     devices = {}
-    devices['DAQ0'] = {'send_address': 'tcp://127.0.0.1:5500'}
-    devices['DAQ1'] = {'send_address': 'tcp://127.0.0.1:5501'}
+    devices['DAQ0'] = {'send_address': 'tcp://127.0.0.1:5500',
+                       'data_type': 'pybar_fei4',
+                       'data_file': 'pybar_data.h5'
+                       }
+    devices['DAQ1'] = {'send_address': 'tcp://127.0.0.1:5501',
+                       'data_type': 'pybar_fei4',
+                       'data_file': 'pybar_data.h5'
+                       }
     conf['producer'] = devices
     # Add converter
     devices = {}
-    devices['DUT0'] = {
-        'data_type': 'example_converter',
-        'receive_address': 'tcp://127.0.0.1:5500',
-        'send_address': 'tcp://127.0.0.1:5600',
-        'max_cpu_load': None,
-        'threshold': 8
-    }
-    devices['DUT1'] = {
-        'data_type': 'forwarder',
-        'receive_address': 'tcp://127.0.0.1:5600',
-        'send_address': 'tcp://127.0.0.1:5601',
-        'max_cpu_load': None
-    }
+    devices['DUT0'] = {'data_type': 'pybar_fei4',
+                       'receive_address': 'tcp://127.0.0.1:5500',
+                       'send_address': 'tcp://127.0.0.1:5600',
+                       'max_cpu_load': None,
+                       'threshold': 8
+                       }
+    devices['DUT1'] = {'data_type': 'forwarder',
+                       'receive_address': 'tcp://127.0.0.1:5600',
+                       'send_address': 'tcp://127.0.0.1:5601',
+                       'max_cpu_load': None
+                       }
     conf['converter'] = devices
     # Add receiver
     devices = {}
-    devices['DUT0'] = {
-        'data_type': 'example_receiver',
-        'receive_address': 'tcp://127.0.0.1:5600'
-    }
-    devices['DUT1'] = {
-        'data_type': 'example_receiver',
-        'receive_address': 'tcp://127.0.0.1:5601'
-    }
+    devices['DUT0'] = {'data_type': 'pybar_fei4',
+                       'receive_address': 'tcp://127.0.0.1:5600'
+                       }
+    devices['DUT1'] = {'data_type': 'pybar_fei4',
+                       'receive_address': 'tcp://127.0.0.1:5601'
+                       }
     conf['receiver'] = devices
     return yaml.dump(conf, default_flow_style=False)
 
@@ -75,12 +76,8 @@ def get_python_processes():  # return the number of python processes
     return n_python
 
 
-def run_script_in_shell(script, arguments):
-    return subprocess.Popen("python %s %s" % (script, arguments), shell=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
-
-
-def run_script_in_process(script, arguments):
-    return subprocess.Popen(["python", script, arguments], shell=False, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
+def run_script_in_shell(script, arguments, command=None):
+    return subprocess.Popen("%s %s %s" % ('python' if not command else command, script, arguments), shell=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
 
 
 class TestOnlineMonitor(unittest.TestCase):
@@ -96,12 +93,10 @@ class TestOnlineMonitor(unittest.TestCase):
             from xvfbwrapper import Xvfb
             cls.vdisplay = Xvfb()
             cls.vdisplay.start()
-        settings.add_converter_path(r'examples/converter')
-        settings.add_receiver_path(r'examples/receiver')
         # Start the simulation producer to create some fake data
         cls.producer_process = run_script_in_shell(producer_path, 'tmp_cfg.yml')
         # Start converter
-        cls.converter_manager_process = run_script_in_shell(converter_manager_path, 'tmp_cfg.yml')
+        cls.converter_manager_process = run_script_in_shell('', 'tmp_cfg.yml', command='start_converter')
         # Create Gui
         time.sleep(2)
         cls.app = QApplication(sys.argv)
@@ -131,7 +126,7 @@ class TestOnlineMonitor(unittest.TestCase):
         data_received_0 = []
         self.app.processEvents()
         for receiver in self.online_monitor.receivers:
-            data_received_0.append(receiver.position_img.getHistogram())
+            data_received_0.append(receiver.occupancy_img.getHistogram())
         self.online_monitor.tab_widget.setCurrentIndex(1)
         self.app.processEvents()
         time.sleep(3)
@@ -139,7 +134,7 @@ class TestOnlineMonitor(unittest.TestCase):
         time.sleep(0.2)
         data_received_1 = []
         for receiver in self.online_monitor.receivers:
-            data_received_1.append(receiver.position_img.getHistogram())
+            data_received_1.append(receiver.occupancy_img.getHistogram())
         # activate DUT widget, receiver 2 should show data
         self.online_monitor.tab_widget.setCurrentIndex(2)
         self.app.processEvents()
@@ -148,11 +143,7 @@ class TestOnlineMonitor(unittest.TestCase):
         time.sleep(0.2)
         data_received_2 = []
         for receiver in self.online_monitor.receivers:
-            data_received_2.append(receiver.position_img.getHistogram())
-
-        print data_received_0
-        print data_received_1
-        print data_received_2
+            data_received_2.append(receiver.occupancy_img.getHistogram())
 
         self.assertListEqual(data_received_0, [(None, None), (None, None)])
         self.assertTrue(data_received_1[0][0] is not None)
@@ -164,7 +155,6 @@ class TestOnlineMonitor(unittest.TestCase):
         self.assertEqual(self.online_monitor.tab_widget.count(), 3, 'Number of tab widgets wrong')  # 2 receiver + status widget expected
 
 if __name__ == '__main__':
-    producer_path = r'../online_monitor/utils/producer_sim.py'
-    converter_manager_path = r'../online_monitor/start_converter.py'
+    producer_path = r'../silab_online_monitor/producer_sim/pybar_fei4.py'
     suite = unittest.TestLoader().loadTestsFromTestCase(TestOnlineMonitor)
     unittest.TextTestRunner(verbosity=2).run(suite)
