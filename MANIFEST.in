@@ -2,6 +2,6 @@ include LICENSE
 include README.*
 include requirements.*
 #recursive-include docs *
-recursive-include examples *
+#recursive-include examples *
 recursive-include tests *
-recursive-include online_monitor *
+recursive-include silab_online_monitor *
