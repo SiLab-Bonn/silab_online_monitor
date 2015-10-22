@@ -28,7 +28,6 @@ setup(
     platforms='any'
 )
 
-import os
 from online_monitor.utils import settings
-settings.add_converter_path(os.path.dirname(os.path.realpath(__file__)) + r'\converter')
-settings.add_receiver_path(os.path.dirname(os.path.realpath(__file__)) + r'\receiver')
+settings.add_converter_path(r'silab_online_monitor/converter')
+settings.add_receiver_path(r'silab_online_monitor/receiver')
