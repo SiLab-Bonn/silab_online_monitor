@@ -29,5 +29,6 @@ setup(
 )
 
 from online_monitor.utils import settings
+settings.add_producer_sim_path(r'silab_online_monitor/producer_sim')
 settings.add_converter_path(r'silab_online_monitor/converter')
 settings.add_receiver_path(r'silab_online_monitor/receiver')

@@ -1,12 +1,10 @@
 import time
 import numpy as np
 import tables as tb
-import logging
 import zmq
 import os
 
 from online_monitor.utils.producer_sim import ProducerSim
-from online_monitor.utils import utils
 
 
 class pyBarFEI4Sim(ProducerSim):
@@ -47,34 +45,3 @@ class pyBarFEI4Sim(ProducerSim):
             self.sender.send(data[0], flags=zmq.NOBLOCK)  # PyZMQ supports sending numpy arrays without copying any data
         except zmq.Again:
             pass
-
-
-def main():
-    args = utils.parse_arguments()
-    configuration = utils.parse_config_file(args.config_file)
-
-    daqs = []
-    for (actual_producer_name, actual_producer_cfg) in configuration['producer'].items():
-        actual_producer_cfg['name'] = actual_producer_name
-        if actual_producer_cfg['data_type'] != 'pybar_fei4':  # only take pybar producers
-            continue
-        daq = pyBarFEI4Sim(loglevel=args.log,
-                           **actual_producer_cfg)
-        daqs.append(daq)
-
-    for daq in daqs:
-        daq.start()
-
-    while(True):
-        try:
-            time.sleep(2)
-        except KeyboardInterrupt:
-            for daq in daqs:
-                daq.shutdown()
-            for daq in daqs:
-                daq.join(timeout=500)
-            return
-
-
-if __name__ == '__main__':
-    main()

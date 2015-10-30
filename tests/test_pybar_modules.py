@@ -30,7 +30,7 @@ def create_config_yaml():
                        'data_type': 'pybar_fei4',
                        'data_file': 'pybar_data.h5'
                        }
-    conf['producer'] = devices
+    conf['producer_sim'] = devices
     # Add converter
     devices = {}
     devices['DUT0'] = {'data_type': 'pybar_fei4',
@@ -94,7 +94,7 @@ class TestOnlineMonitor(unittest.TestCase):
             cls.vdisplay = Xvfb()
             cls.vdisplay.start()
         # Start the simulation producer to create some fake data
-        cls.producer_process = run_script_in_shell(producer_path, 'tmp_cfg.yml')
+        cls.producer_sim_process = run_script_in_shell('', 'tmp_cfg.yml', 'start_producer_sim')
         # Start converter
         cls.converter_manager_process = run_script_in_shell('', 'tmp_cfg.yml', command='start_converter')
         # Create Gui
@@ -106,7 +106,7 @@ class TestOnlineMonitor(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):  # remove created files
         time.sleep(1)
-        kill(cls.producer_process)
+        kill(cls.producer_sim_process)
         kill(cls.converter_manager_process)
         time.sleep(1)
         os.remove('tmp_cfg.yml')
