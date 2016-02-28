@@ -13,8 +13,7 @@ class pyBarFEI4Sim(ProducerSim):
 
     def setup_producer_device(self):
         ProducerSim.setup_producer_device(self)
-        data_file = os.path.join(os.path.dirname(__file__), self.config['data_file'])
-        with tb.openFile(data_file, mode="r") as in_file_h5:
+        with tb.openFile(self.config['data_file'], mode="r") as in_file_h5:
             self.meta_data = in_file_h5.root.meta_data[:]
             self.raw_data = in_file_h5.root.raw_data[:]
             self.scan_parameter_name = in_file_h5.root.scan_parameters.dtype.names

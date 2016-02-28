@@ -13,7 +13,6 @@ from PyQt4.QtGui import QApplication
 
 from online_monitor import OnlineMonitor
 
-
 # creates a yaml config with all pybar related entities
 def create_config_yaml():
     conf = {}
@@ -22,12 +21,12 @@ def create_config_yaml():
     devices['DAQ0'] = {'backend': 'tcp://127.0.0.1:5500',
                        'kind': 'pybar_fei4',
                        'delay': 0,
-                       'data_file': 'pybar_data.h5'
+                       'data_file': os.path.join(os.path.dirname(__file__), 'pybar_data.h5')
                        }
     devices['DAQ1'] = {'backend': 'tcp://127.0.0.1:5501',
                        'kind': 'pybar_fei4',
                        'delay': 0,
-                       'data_file': 'pybar_data.h5'
+                       'data_file': os.path.join(os.path.dirname(__file__), 'pybar_data.h5')
                        }
     conf['producer_sim'] = devices
     # Add converter
