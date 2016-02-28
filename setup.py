@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+import os
 from setuptools import setup, find_packages  # This setup relies on setuptools since distutils is insufficient and badly hacked code
 
-version = '0.0.1'
+version = '0.2.0'
 author = 'David-Leon Pohl'
 author_email = 'pohl@physik.uni-bonn.de'
 
@@ -28,7 +29,8 @@ setup(
     platforms='any'
 )
 
+# print os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)) + r'/silab_online_monitor/producer_sim/'))
 from online_monitor.utils import settings
-settings.add_producer_sim_path(r'silab_online_monitor/producer_sim')
-settings.add_converter_path(r'silab_online_monitor/converter')
-settings.add_receiver_path(r'silab_online_monitor/receiver')
+settings.add_producer_sim_path(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)) + r'/silab_online_monitor/producer_sim')))
+settings.add_converter_path(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)) + r'/silab_online_monitor/converter')))
+settings.add_receiver_path(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)) + r'/silab_online_monitor/receiver')))
