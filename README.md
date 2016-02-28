@@ -14,6 +14,8 @@ Download the latest code from github to a folder of your choise. Install by typi
 python setup.py develop
 ```
 
+Note: Only the develop installation is supported!
+
 # Usage
 
 TBD
