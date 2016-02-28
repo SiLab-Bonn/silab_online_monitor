@@ -1,6 +1,7 @@
 ''' Script to check the online monitor.
 '''
 
+import os
 import sys
 import unittest
 import yaml
@@ -87,7 +88,7 @@ class TestOnlineMonitor(unittest.TestCase):
             outfile.write(config_file)
         # linux CIs run usually headless, thus virtual x server is needed for
         # gui testing
-        if os.name != 'nt':
+        if os.getenv('TRAVIS', False):
             from xvfbwrapper import Xvfb
             cls.vdisplay = Xvfb()
             cls.vdisplay.start()
