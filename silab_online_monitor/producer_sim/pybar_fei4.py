@@ -1,3 +1,5 @@
+''' This is a producer faking data coming from pyBAR by taking real data and sending these in chunks'''
+
 import time
 import numpy as np
 import tables as tb
@@ -27,7 +29,9 @@ class pyBarFEI4Sim(ProducerSim):
             return data, {"PlsrDAC": int(self.scan_parameters[index][0])}
 
     def send_data(self):
-        time.sleep(1)
+        '''Sends the data of every read out (raw data and meta data) via ZeroMQ to a specified socket
+        '''
+        time.sleep(float(self.config['delay']))  # Delay is given in seconds
 
         data, scan_parameters = self.get_data()
  
