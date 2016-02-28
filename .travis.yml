@@ -22,9 +22,9 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda update --yes conda
-  - conda install --yes pyqt pyyaml pyzmq blosc psutil numpy coverage
+  - conda install --yes pyqt pyyaml pyzmq blosc psutil numpy coverage cython pytables future nose docutils
   - pip install xvfbwrapper  # fake x server for Qt gui tests
-  - pip install coveralls
+  - pip install coveralls  # coverage testing
   # Install instructions valid for all python distributions
   - pip install --upgrade pip
   - pip install -r requirements.txt --cache-dir $HOME/.pip-cache

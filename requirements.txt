@@ -1,1 +1,2 @@
-online_monitor
+online_monitor  # the main package used, silab_online_monitor us only a plugin for this package
+pyBAR_fei4_interpreter  # to interpret the FE-I4 raw data taken with pyBAR
