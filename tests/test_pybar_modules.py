@@ -10,48 +10,46 @@ import os
 import psutil
 from PyQt4.QtGui import QApplication
 
-from online_monitor.utils import settings
 from online_monitor import OnlineMonitor
 
-producer_path = r'silab_online_monitor/producer_sim/pybar_fei4.py'
 
-
-# creates a yaml config describing n_converter of type forwarder that are
-# all connection to each other
+# creates a yaml config with all pybar related entities
 def create_config_yaml():
     conf = {}
     # Add producer
     devices = {}
-    devices['DAQ0'] = {'send_address': 'tcp://127.0.0.1:5500',
-                       'data_type': 'pybar_fei4',
+    devices['DAQ0'] = {'backend': 'tcp://127.0.0.1:5500',
+                       'kind': 'pybar_fei4',
+                       'delay': 0,
                        'data_file': 'pybar_data.h5'
                        }
-    devices['DAQ1'] = {'send_address': 'tcp://127.0.0.1:5501',
-                       'data_type': 'pybar_fei4',
+    devices['DAQ1'] = {'backend': 'tcp://127.0.0.1:5501',
+                       'kind': 'pybar_fei4',
+                       'delay': 0,
                        'data_file': 'pybar_data.h5'
                        }
     conf['producer_sim'] = devices
     # Add converter
     devices = {}
-    devices['DUT0'] = {'data_type': 'pybar_fei4',
-                       'receive_address': 'tcp://127.0.0.1:5500',
-                       'send_address': 'tcp://127.0.0.1:5600',
+    devices['DUT0'] = {'kind': 'pybar_fei4',
+                       'frontend': 'tcp://127.0.0.1:5500',
+                       'backend': 'tcp://127.0.0.1:5600',
                        'max_cpu_load': None,
                        'threshold': 8
                        }
-    devices['DUT1'] = {'data_type': 'forwarder',
-                       'receive_address': 'tcp://127.0.0.1:5600',
-                       'send_address': 'tcp://127.0.0.1:5601',
+    devices['DUT1'] = {'kind': 'forwarder',
+                       'frontend': 'tcp://127.0.0.1:5600',
+                       'backend': 'tcp://127.0.0.1:5601',
                        'max_cpu_load': None
                        }
     conf['converter'] = devices
     # Add receiver
     devices = {}
-    devices['DUT0'] = {'data_type': 'pybar_fei4',
-                       'receive_address': 'tcp://127.0.0.1:5600'
+    devices['DUT0'] = {'kind': 'pybar_fei4',
+                       'frontend': 'tcp://127.0.0.1:5600'
                        }
-    devices['DUT1'] = {'data_type': 'pybar_fei4',
-                       'receive_address': 'tcp://127.0.0.1:5601'
+    devices['DUT1'] = {'kind': 'pybar_fei4',
+                       'frontend': 'tcp://127.0.0.1:5601'
                        }
     conf['receiver'] = devices
     return yaml.dump(conf, default_flow_style=False)
@@ -150,11 +148,10 @@ class TestOnlineMonitor(unittest.TestCase):
         self.assertTupleEqual(data_received_0[1], (None, None))
         self.assertTrue(data_received_2[1][0] is not None)
 
-    # start 10 forwarder in a chain and do "whisper down the lane"
+    #  Test the Ui
     def test_ui(self):
         self.assertEqual(self.online_monitor.tab_widget.count(), 3, 'Number of tab widgets wrong')  # 2 receiver + status widget expected
 
 if __name__ == '__main__':
-    producer_path = r'../silab_online_monitor/producer_sim/pybar_fei4.py'
     suite = unittest.TestLoader().loadTestsFromTestCase(TestOnlineMonitor)
     unittest.TextTestRunner(verbosity=2).run(suite)
