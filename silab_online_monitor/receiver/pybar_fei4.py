@@ -85,8 +85,7 @@ class PybarFEI4(Receiver):
         dock_hit_timing.addWidget(hit_timing_widget)
 
     def deserialze_data(self, data):
-        f = jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
-        return f
+        return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def handle_data(self, data):
         if 'meta_data' not in data:
