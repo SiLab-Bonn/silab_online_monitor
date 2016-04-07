@@ -34,7 +34,7 @@ class PybarFEI4(Transceiver):
                         return raw_data_array
                     except (KeyError, ValueError):  # KeyError happens if meta data read is omitted; ValueError if np.frombuffer fails due to wrong sha
                         return None
-            except AttributeError:  # happens if first data is not meta data
+            except AttributeError:  # Happens if first data is not meta data
                 return None
         return {'meta_data': self.meta_data}
 
