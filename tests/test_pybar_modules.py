@@ -13,6 +13,7 @@ from PyQt4.QtGui import QApplication
 
 from online_monitor import OnlineMonitor
 
+
 # creates a yaml config with all pybar related entities
 def create_config_yaml():
     conf = {}
