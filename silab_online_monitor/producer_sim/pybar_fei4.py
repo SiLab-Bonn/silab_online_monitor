@@ -4,7 +4,7 @@ import time
 import numpy as np
 import tables as tb
 import zmq
-import os
+import logging
 
 from online_monitor.utils.producer_sim import ProducerSim
 
@@ -18,22 +18,40 @@ class pyBarFEI4Sim(ProducerSim):
             self.raw_data = in_file_h5.root.raw_data[:]
             self.scan_parameter_name = in_file_h5.root.scan_parameters.dtype.names
             self.scan_parameters = in_file_h5.root.scan_parameters[:]
+            self.readout_word_indeces = np.column_stack((self.meta_data['index_start'], self.meta_data['index_stop']))
+            self.actual_readout = 0
+            self.last_readout_time = None
 
-    def get_data(self):
-        for index, (index_start, index_stop) in enumerate(np.column_stack((self.meta_data['index_start'], self.meta_data['index_stop']))):
+    def get_data(self):  # Return the data of one readout
+        if self.actual_readout < self.scan_parameters.shape[0]:
+            index_start, index_stop = self.readout_word_indeces[self.actual_readout]
             data = []
             data.append(self.raw_data[index_start:index_stop])
-            data.extend((float(self.meta_data[index]['timestamp_start']), float(self.meta_data[index]['timestamp_stop']), int(self.meta_data[index]['error'])))
-            time.sleep(self.meta_data[index]['timestamp_stop'] - self.meta_data[index]['timestamp_start'])
-            return data, {"PlsrDAC": int(self.scan_parameters[index][0])}
+            data.extend((float(self.meta_data[self.actual_readout]['timestamp_start']), float(self.meta_data[self.actual_readout]['timestamp_stop']), int(self.meta_data[self.actual_readout]['error'])))
+            # FIXME: Simple syncronization to have replay with similar timing, does not really work
+            now = time.time()
+            if self.last_readout_time is not None:
+                delay = now - self.last_readout_time
+                additional_delay = self.meta_data[self.actual_readout]['timestamp_stop'] - self.meta_data[self.actual_readout]['timestamp_start'] - delay
+                if additional_delay > 0:
+                    time.sleep(additional_delay)
+            self.last_readout_time = now
+            return data, {str(self.scan_parameter_name): int(self.scan_parameters[self.actual_readout][0])}
 
     def send_data(self):
         '''Sends the data of every read out (raw data and meta data) via ZeroMQ to a specified socket
         '''
         time.sleep(float(self.config['delay']))  # Delay is given in seconds
 
-        data, scan_parameters = self.get_data()
- 
+        try:
+            data, scan_parameters = self.get_data()  # Get data of actual readout
+        except TypeError:  # Data is fully replayes
+            logging.warning('%s producer: No data to replay anymore!' % self.name)
+            time.sleep(10)
+            return
+
+        self.actual_readout += 1
+
         data_meta_data = dict(
             name='ReadoutData',
             dtype=str(data[0].dtype),
