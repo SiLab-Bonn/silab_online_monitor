@@ -4,7 +4,6 @@ import numpy as np
 
 # pyBAR related imports
 from pybar_fei4_interpreter.data_interpreter import PyDataInterpreter
-from pybar_fei4_interpreter.data_histograming import PyDataHistograming
 
 from online_monitor.utils import utils
 
@@ -13,15 +12,9 @@ class PybarFEI4(Transceiver):
 
     def setup_interpretation(self):
         self.interpreter = PyDataInterpreter()
-        self.histograming = PyDataHistograming()
         self.interpreter.set_warning_output(False)
-        self.histograming.set_no_scan_parameter()
-        self.histograming.create_occupancy_hist(True)
-        self.histograming.create_rel_bcid_hist(True)
-        self.histograming.create_tot_hist(True)
-        self.histograming.create_tdc_hist(True)
 
-    def deserialze_data(self, data):
+    def deserialze_data(self, data):  # According to pyBAR data serilization
         try:
             self.meta_data = jsonapi.loads(data)
         except ValueError:
@@ -40,21 +33,21 @@ class PybarFEI4(Transceiver):
 
     def interpret_data(self, data):
         if isinstance(data[0][1], dict):  # Meta data is omitted, only raw data is interpreted
+            # Add info to meta data
+            data[0][1]['meta_data'].update({'n_hits': self.interpreter.get_n_hits(), 'n_events': self.interpreter.get_n_events()})
             return [data[0][1]]
 
         self.interpreter.interpret_raw_data(data[0][1])
-        # FIXME: no way to reset the histograms yet
-        # self.histograming.reset()
-        self.histograming.add_hits(self.interpreter.get_hits())
+
         interpreted_data = {
-            'occupancy': self.histograming.get_occupancy(),
-            'tot_hist': self.histograming.get_tot_hist(),
+            'hits': self.interpreter.get_hits(),
             'tdc_counters': self.interpreter.get_tdc_counters(),
             'error_counters': self.interpreter.get_error_counters(),
             'service_records_counters': self.interpreter.get_service_records_counters(),
-            'trigger_error_counters': self.interpreter.get_trigger_error_counters(),
-            'rel_bcid_hist': self.histograming.get_rel_bcid_hist()
+            'trigger_error_counters': self.interpreter.get_trigger_error_counters()
         }
+
+        self.interpreter.reset_histograms()  # For the summing of histograms the histogrammer converter is used
         return [interpreted_data]
 
     def serialze_data(self, data):
