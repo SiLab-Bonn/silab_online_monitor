@@ -45,8 +45,6 @@ class PybarFEI4Histogrammer(Transceiver):
 
     def interpret_data(self, data):
         def update_monitor(self, timestamp_start, timestamp_stop, readout_error, scan_parameters, n_hits, n_events):
-#             self.plot_delay = self.plot_delay * 0.9 + (now - timestamp_stop) * 0.1
-#             self.plot_delay_label.setText("Plot Delay\n%s" % ((time.strftime('%H:%M:%S', time.gmtime(self.plot_delay))) if abs(self.plot_delay) > 5 else "%1.2f ms" % (self.plot_delay * 1.e3)))
             recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
             recent_hps = (recent_total_hits - self.total_hits) / (now - self.updateTime)
             recent_eps = (recent_total_events - self.total_events) / (now - self.updateTime)
@@ -57,7 +55,7 @@ class PybarFEI4Histogrammer(Transceiver):
             self.hps = self.hps + (recent_hps - self.hps) * 0.3 / self.fps
             self.eps = self.eps + (recent_eps - self.eps) * 0.3 / self.fps
             self.update_rate(self.fps, self.hps, recent_total_hits, self.eps, recent_total_events)
- 
+
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
             now = time.time()
@@ -132,14 +130,3 @@ class PybarFEI4Histogrammer(Transceiver):
             self.trigger_error_counters = np.zeros_like(self.trigger_error_counters)
         else:
             self.n_readouts = int(command[0])
-
-    def update_rate(self, fps, hps, recent_total_hits, eps, recent_total_events):
-        self.rate_label.setText("Readout Rate\n%d Hz" % fps)
-        if self.spin_box.value() == 0:  # show number of hits, all hits are integrated
-            self.hit_rate_label.setText("Total Hits\n%d" % int(recent_total_hits))
-        else:
-            self.hit_rate_label.setText("Hit Rate\n%d Hz" % int(hps))
-        if self.spin_box.value() == 0:  # show number of events
-            self.event_rate_label.setText("Total Events\n%d" % int(recent_total_events))
-        else:
-            self.event_rate_label.setText("Event Rate\n%d Hz" % int(eps))
