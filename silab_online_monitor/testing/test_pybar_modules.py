@@ -20,12 +20,12 @@ def create_config_yaml():
     devices = {}
     devices['DAQ0'] = {'backend': 'tcp://127.0.0.1:5500',
                        'kind': 'pybar_fei4',
-                       'delay': 1,
+                       'delay': 0.1,
                        'data_file': os.path.join(os.path.dirname(__file__), 'pybar_data.h5')
                        }
     devices['DAQ1'] = {'backend': 'tcp://127.0.0.1:5501',
                        'kind': 'pybar_fei4',
-                       'delay': 1,
+                       'delay': 0.1,
                        'data_file': os.path.join(os.path.dirname(__file__), 'pybar_data.h5')
                        }
     conf['producer_sim'] = devices
@@ -125,8 +125,8 @@ class TestOnlineMonitor(unittest.TestCase):
         self.app.processEvents()  # Clear event queue
         # Activate status widget, no data should be received
         self.online_monitor.tab_widget.setCurrentIndex(0)
-        self.app.processEvents()  # Event loop does not run in testss, thus we have to trigger the event queue manually
-        time.sleep(3)
+        self.app.processEvents()  # Event loop does not run in tests, thus we have to trigger the event queue manually
+        time.sleep(1)
         self.app.processEvents()
         time.sleep(0.2)
         data_received_0 = []
@@ -136,7 +136,7 @@ class TestOnlineMonitor(unittest.TestCase):
         # Activate DUT widget, receiver 1 should show data
         self.online_monitor.tab_widget.setCurrentIndex(1)
         self.app.processEvents()
-        time.sleep(3)
+        time.sleep(1)
         self.app.processEvents()
         time.sleep(0.2)
         data_received_1 = []
@@ -145,9 +145,9 @@ class TestOnlineMonitor(unittest.TestCase):
         # Activate DUT widget, receiver 2 should show data
         self.online_monitor.tab_widget.setCurrentIndex(2)
         self.app.processEvents()
-        time.sleep(3)
+        time.sleep(1)
         self.app.processEvents()
-        time.sleep(2)
+        time.sleep(1)
         data_received_2 = []
         for receiver in self.online_monitor.receivers:
             data_received_2.append(receiver.occupancy_img.getHistogram())
