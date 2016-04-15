@@ -44,18 +44,6 @@ class PybarFEI4Histogrammer(Transceiver):
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def interpret_data(self, data):
-        def update_monitor(self, timestamp_start, timestamp_stop, readout_error, scan_parameters, n_hits, n_events):
-            recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
-            recent_hps = (recent_total_hits - self.total_hits) / (now - self.updateTime)
-            recent_eps = (recent_total_events - self.total_events) / (now - self.updateTime)
-            self.updateTime = now
-            self.total_hits = recent_total_hits
-            self.total_events = recent_total_events
-            self.fps = self.fps * 0.7 + recent_fps * 0.3
-            self.hps = self.hps + (recent_hps - self.hps) * 0.3 / self.fps
-            self.eps = self.eps + (recent_eps - self.eps) * 0.3 / self.fps
-            self.update_rate(self.fps, self.hps, recent_total_hits, self.eps, recent_total_events)
-
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
             now = time.time()
