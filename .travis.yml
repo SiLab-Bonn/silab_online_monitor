@@ -27,6 +27,7 @@ install:
   - pip install coveralls  # coverage testing
   # Install instructions valid for all python distributions
   - pip install https://github.com/SiLab-Bonn/silab_utils
+  - pip install https://github.com/SiLab-Bonn/pyBAR_mimosa26_interpreter/archive/master.zip
   - pip install https://github.com/SiLab-Bonn/pyqtgraph/archive/develop.zip  # Until working release is published
   - pip install --upgrade pip
   - pip install -r requirements.txt --cache-dir $HOME/.pip-cache
