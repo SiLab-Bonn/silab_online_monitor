@@ -3,13 +3,22 @@
 import time
 from zmq.utils import jsonapi
 import numpy as np
+from numba import njit
 
 # Online monitor imports
 from online_monitor.converter.transceiver import Transceiver
 from online_monitor.utils import utils
 
-# pyBAR related imports
-from silab_utils import analysis_utils
+
+@njit
+def fill_occupanc_hist(hist, hits):  # Histogram the piel hits per plane
+    for hit_index in range(hits.shape[0]):
+        hist[hits[hit_index]['plane']][hits[hit_index]['column'], hits[hit_index]['row']] += 1
+
+
+def apply_noisy_pixel_cut(hist, noisy_threshold):
+    for plane in range(6):
+        
 
 
 class PybarMimosa26Histogrammer(Transceiver):
@@ -69,11 +78,11 @@ class PybarMimosa26Histogrammer(Transceiver):
         if hits.shape[0] == 0:  # Empty array
             return
 
-        for plane in range(6):  # Loop over Mimosa planes
-            actual_plane_hits = hits[hits['plane'] == plane]  # Select plane hits
-            self.occupancy_arrays[plane] += analysis_utils.hist_2d_index(actual_plane_hits['column'], actual_plane_hits['row'], shape=(1152, 576))
-            if self.mask_noisy_pixel:
-                self.occupancy_arrays[plane][self.occupancy_arrays[plane] > np.percentile(self.occupancy_arrays[plane], 100 - self.config['noisy_threshold'])] = 0
+        fill_occupanc_hist(self.occupancy_arrays, hits)
+
+        if self.mask_noisy_pixel:
+            self.occupancy_arrays[:, self.occupancy_arrays > np.percentile(self.occupancy_arrays, 100 - self.config['noisy_threshold'], axis=1)] = 0
+            #apply_noisy_pixel_cut(self.occupancy_arrays, self.config['noisy_threshold'])
 
 #         # Sum up interpreter histograms
 #         if self.error_counters is not None:
