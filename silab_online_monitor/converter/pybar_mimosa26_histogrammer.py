@@ -11,14 +11,14 @@ from online_monitor.utils import utils
 
 
 @njit
-def fill_occupanc_hist(hist, hits):  # Histogram the piel hits per plane
+def fill_occupanc_hist(hist, hits):  # Histogram the pixel hits per plane; JIT is faster then cythonized hist2d applied for each plane, since less looping is involved
     for hit_index in range(hits.shape[0]):
         hist[hits[hit_index]['plane']][hits[hit_index]['column'], hits[hit_index]['row']] += 1
 
 
-def apply_noisy_pixel_cut(hist, noisy_threshold):
+def apply_noisy_pixel_cut(hists, noisy_threshold):
     for plane in range(6):
-        
+        hists[plane] = hists[plane][hists[plane] < noisy_threshold]
 
 
 class PybarMimosa26Histogrammer(Transceiver):
@@ -82,7 +82,7 @@ class PybarMimosa26Histogrammer(Transceiver):
 
         if self.mask_noisy_pixel:
             self.occupancy_arrays[:, self.occupancy_arrays > np.percentile(self.occupancy_arrays, 100 - self.config['noisy_threshold'], axis=1)] = 0
-            #apply_noisy_pixel_cut(self.occupancy_arrays, self.config['noisy_threshold'])
+            # apply_noisy_pixel_cut(self.occupancy_arrays, self.config['noisy_threshold'])
 
 #         # Sum up interpreter histograms
 #         if self.error_counters is not None:
@@ -110,9 +110,9 @@ class PybarMimosa26Histogrammer(Transceiver):
             self.total_events = 0
         elif 'MASK' in command[0]:
             if '0' in command[0]:
-                self.mask_noisy_pixel=False
+                self.mask_noisy_pixel = False
             else:
-                self.mask_noisy_pixel=True
+                self.mask_noisy_pixel = True
         else:
             self.n_readouts = int(command[0])
             self.occupancy_arrays = np.zeros(shape=(6, 1152, 576), dtype=np.int32)  # Reset occ hists
