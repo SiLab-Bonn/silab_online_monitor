@@ -24,6 +24,7 @@ class PybarFEI4Histogrammer(Transceiver):
         self.histograming.create_rel_bcid_hist(True)
         self.histograming.create_tot_hist(True)
         self.histograming.create_tdc_hist(True)
+        
         # Variables
         self.n_readouts = 0
         self.readout = 0
@@ -34,6 +35,7 @@ class PybarFEI4Histogrammer(Transceiver):
         self.total_hits = 0
         self.total_events = 0
         self.updateTime = time.time()
+        
         # Histogrammes from interpretation stored for summing
         self.tdc_counters = None
         self.error_counters = None
@@ -44,7 +46,8 @@ class PybarFEI4Histogrammer(Transceiver):
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def interpret_data(self, data):
-        if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
+        # Meta data is directly forwarded to the receiver, only hit data and event counters are histogramed
+        if 'meta_data' in data[0][1]:  # 0 for frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
             now = time.time()
             recent_total_hits = meta_data['n_hits']
@@ -63,7 +66,7 @@ class PybarFEI4Histogrammer(Transceiver):
 
         self.readout += 1
 
-        if self.n_readouts != 0:  # = 0 for infinite integration
+        if self.n_readouts != 0:  # 0 for infinite integration
             if self.readout % self.n_readouts == 0:
                 self.histograming.reset()
                 self.tdc_counters = np.zeros_like(self.tdc_counters)
@@ -110,7 +113,7 @@ class PybarFEI4Histogrammer(Transceiver):
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 
     def handle_command(self, command):
-        if command[0] == 'RESET':
+        if command[0] == 'RESET':  # Reset command to reset the histograms
             self.histograming.reset()
             self.tdc_counters = np.zeros_like(self.tdc_counters)
             self.error_counters = np.zeros_like(self.error_counters)
