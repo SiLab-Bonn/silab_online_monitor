@@ -37,7 +37,6 @@ class PybarMimosa26(Transceiver):
             # Add info to meta data
             data[0][1]['meta_data'].update({'n_hits': self.n_hits, 'n_events': self.n_events})
             return [data[0][1]]
-
         hits = self.interpreter.interpret_raw_data(data[0][1])
 
         interpreted_data = {
@@ -45,7 +44,7 @@ class PybarMimosa26(Transceiver):
         }
 
         self.n_hits = hits.shape[0]
-        self.n_events = np.unique(hits['event_number']).shape[0]
+        self.n_events = np.unique(hits['frame']).shape[0]
 
         # self.interpreter.reset_histograms()  # Not implemented yet
         return [interpreted_data]

@@ -13,7 +13,9 @@ from online_monitor.utils import utils
 @njit
 def fill_occupanc_hist(hist, hits):  # Histogram the pixel hits per plane; JIT is faster then cythonized hist2d applied for each plane, since less looping is involved
     for hit_index in range(hits.shape[0]):
-        hist[hits[hit_index]['plane']][hits[hit_index]['column'], hits[hit_index]['row']] += 1
+        if hits[hit_index]['plane']!=0:
+            hist[hits[hit_index]['plane']-1][hits[hit_index]['column'], hits[hit_index]['row']] += 1
+        ##if hits[hit_index]['plane']==0 do nothing. becuase plane=0 is TLU debug data
 
 
 def apply_noisy_pixel_cut(hists, noisy_threshold):
@@ -77,7 +79,6 @@ class PybarMimosa26Histogrammer(Transceiver):
 
         if hits.shape[0] == 0:  # Empty array
             return
-
         fill_occupanc_hist(self.occupancy_arrays, hits)
 
         if self.mask_noisy_pixel:
@@ -94,7 +95,7 @@ class PybarMimosa26Histogrammer(Transceiver):
 #         else:
 #             self.trigger_error_counters = interpreted_data['trigger_error_counters'].copy()  # Copy needed to give ownage to histogrammer
 
-        histogrammed_data = {
+        histogrammed_data = { 
             'occupancies': self.occupancy_arrays
         }
 
