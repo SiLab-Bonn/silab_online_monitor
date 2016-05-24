@@ -7,3 +7,5 @@
 /workfile_pybar_mimosa26
 /workfile_pybar_mimosa26_histogrammer
 /source_scan.h5
+/*.h5
+/workfile*
