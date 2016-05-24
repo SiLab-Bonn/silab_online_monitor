@@ -40,7 +40,8 @@ class PybarMimosa26(Transceiver):
         hits = self.interpreter.interpret_raw_data(data[0][1])
 
         interpreted_data = {
-            'hits': hits
+            'hits': hits,
+            'device_type': 'm26'
         }
 
         self.n_hits = hits.shape[0]

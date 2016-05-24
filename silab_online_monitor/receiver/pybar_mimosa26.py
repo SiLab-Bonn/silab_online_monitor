@@ -34,7 +34,7 @@ class PybarMimosa26(Receiver):
             view = occupancy_graphics.addViewBox()
             self.occupancy_images.append(pg.ImageItem(border='w'))
             view.addItem(self.occupancy_images[2 * plane])
-            view.setRange(QtCore.QRectF(0, 0, 80, 336))
+            #vew.setRange(QtCore.QRectF(0, 0, 80, 336))
             dock_occcupancy.addWidget(occupancy_graphics)
 
             # Dock right
@@ -45,7 +45,7 @@ class PybarMimosa26(Receiver):
             view = occupancy_graphics.addViewBox()
             self.occupancy_images.append(pg.ImageItem(border='w'))
             view.addItem(self.occupancy_images[2 * plane + 1])
-            view.setRange(QtCore.QRectF(0, 0, 80, 336))
+            #view.setRange(QtCore.QRectF(0, 0, 80, 336))
             dock_occcupancy_2.addWidget(occupancy_graphics)
 
         # dock_event_status = Dock("Event status", size=(400, 400))

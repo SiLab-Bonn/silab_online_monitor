@@ -82,8 +82,8 @@ class PybarMimosa26Histogrammer(Transceiver):
         fill_occupanc_hist(self.occupancy_arrays, hits)
 
         if self.mask_noisy_pixel:
-            self.occupancy_arrays[:, self.occupancy_arrays > np.percentile(self.occupancy_arrays, 100 - self.config['noisy_threshold'], axis=1)] = 0
-            # apply_noisy_pixel_cut(self.occupancy_arrays, self.config['noisy_threshold'])
+            for occupancy_array in self.occupancy_arrays:
+                occupancy_array[occupancy_array > np.percentile(self.occupancy_arrays, 100 - self.config['noisy_threshold'])] = 0
 
 #         # Sum up interpreter histograms
 #         if self.error_counters is not None:

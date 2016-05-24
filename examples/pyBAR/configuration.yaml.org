@@ -1,0 +1,38 @@
+producer_sim :
+    DAQ0 :
+        kind : pybar_fei4
+        delay : 0.1
+        backend: tcp://127.0.0.1:5500
+        data_file: C:\Users\DavidLP\git\silab_online_monitor\examples\pyBAR\pybar_data.h5
+        
+    DAQ1 :
+        kind : pybar_fei4
+        delay : 0.1
+        backend : tcp://127.0.0.1:6500
+        data_file: C:\Users\DavidLP\git\silab_online_monitor\examples\pyBAR\pybar_data.h5
+
+converter :
+    DUT0_Interpreter :
+        kind : pybar_fei4
+        frontend : tcp://127.0.0.1:5500
+        backend : tcp://127.0.0.1:5600
+    DUT0_Histogrammer :
+        kind : pybar_fei4_histogrammer
+        frontend : tcp://127.0.0.1:5600
+        backend : tcp://127.0.0.1:5700
+    DUT1_Interpreter :
+        kind : pybar_fei4
+        frontend : tcp://127.0.0.1:6500
+        backend : tcp://127.0.0.1:6600
+    DUT1_Histogrammer :
+        kind : pybar_fei4_histogrammer
+        frontend : tcp://127.0.0.1:6600
+        backend : tcp://127.0.0.1:6700
+
+receiver :
+    DUT0 :
+        kind : pybar_fei4
+        frontend : tcp://127.0.0.1:5700
+    DUT1 :
+        kind : pybar_fei4
+        frontend : tcp://127.0.0.1:6700
