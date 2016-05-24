@@ -101,7 +101,13 @@ class PybarMimosa26(Receiver):
         self.plot_delay = 0
 
     def deserialze_data(self, data):
-        return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+
+        datar, meta  = utils.simple_dec(data)
+        if 'occupancies' in meta:
+            meta['occupancies'] = datar
+        return meta
+        
+        #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def handle_data(self, data):
         def update_rate(fps, hps, recent_total_hits, eps, recent_total_events):
