@@ -46,7 +46,11 @@ class PybarMimosa26Histogrammer(Transceiver):
 #         self.trigger_error_counters = None
 
     def deserialze_data(self, data):
-        return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+        #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+        datar, meta  = utils.simple_dec(data)
+        if 'hits' in meta:
+            meta['hits'] = datar
+        return meta
 
     def interpret_data(self, data):
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
@@ -102,8 +106,16 @@ class PybarMimosa26Histogrammer(Transceiver):
         return [histogrammed_data]
 
     def serialze_data(self, data):
-        return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+        #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 
+        if 'occupancies' in data:
+            hits_data  = data['occupancies']
+            data['occupancies'] = None
+            return utils.simple_enc(hits_data, data)
+        else:
+            return utils.simple_enc(None, data)
+            
+        
     def handle_command(self, command):
         if command[0] == 'RESET':
             self.occupancy_arrays = np.zeros(shape=(6, 1152, 576), dtype=np.int32)  # Reset occ hists

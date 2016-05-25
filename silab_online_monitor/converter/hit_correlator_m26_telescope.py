@@ -29,8 +29,12 @@ class HitCorrelator(Transceiver):
             #self.all_hists_row_corr[frontend[0]] = np.zeros(shape=(self.config['max_n_rows'], self.config['max_n_rows']))
 
     def deserialze_data(self, data):  # According to pyBAR data serilization
-        return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
-    
+        #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+        datar, meta  = utils.simple_dec(data)
+        if 'hits' in meta:
+            meta['hits'] = datar
+        return meta
+        
     def interpret_data(self, data):
         event_n_step = 2000
         for actual_dut_data in data:
@@ -88,8 +92,9 @@ class HitCorrelator(Transceiver):
         
     
     def serialze_data(self, data):
-        return jsonapi.dumps(data, cls=utils.NumpyEncoder)
-    
+        #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+        return utils.simple_enc(None, data)
+        
     def handle_command(self, command):
             if command[0] == 'RESET':
                 return
