@@ -20,7 +20,6 @@ class HitCorrelator(Transceiver):
         self.all_hists_col_corr = {} # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
         self.all_hists_row_corr = {} # used to be self.hists_row_corr /
         
-
         for frontend in self.frontends:
             self.all_hists_col_corr[frontend[0]] = np.zeros(shape=(self.config['max_n_columns'], self.config['max_n_columns']))
             self.all_hists_row_corr[frontend[0]] = np.zeros(shape=(self.config['max_n_rows'], self.config['max_n_rows']))
@@ -42,10 +41,13 @@ class HitCorrelator(Transceiver):
         
         active_device_data = self.data_buffer[self.frontends[self.active_dut][0]]
         
+        print "active device data",active_device_data #FIXMEEEEEEEEEEEEEEEE
+        return #FIXMEE
+    
         for device_other_data in self.data_buffer.items():
             # Main function to correlate data in time
             active_device_data, device_other_data = analysis_utils.merge_on_event_number(active_device_data, device_other_data[1])
-              
+               
             # Function to correlate positions
             try:
                 hist_row_corr = analysis_utils.hist_2d_index(active_device_data['row'], device_other_data['row'], shape=(self.config['max_n_rows'], self.config['max_n_rows']))
@@ -53,12 +55,12 @@ class HitCorrelator(Transceiver):
             except IndexError:
                 logging.warning('Histogram indices out of range!')
                 return
-  
+   
             self.all_hists_col_corr[self.frontends[self.active_dut][0]] += hist_column_corr    
             self.all_hists_row_corr[self.frontends[self.active_dut][0]] += hist_row_corr
-         
+          
         return [{'column_%s' % self.frontends[self.active_dut][0]: self.all_hists_col_corr[self.frontends[self.active_dut][0]], 
-                 'row_%s' % self.frontends[self.active_dut][0]: self.all_hists_row_corr[self.frontends[self.active_dut][0]]}]
+                  'row_%s' % self.frontends[self.active_dut][0]: self.all_hists_row_corr[self.frontends[self.active_dut][0]]}]
 
     def serialze_data(self, data):
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)

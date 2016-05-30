@@ -27,7 +27,7 @@ class PybarMimosa26(Receiver):
 
         for plane in range(3):  # Loop over 3 * 2 plot widgets
             # Dock left
-            dock_occcupancy = Dock("Occupancy plane %d" % 2 * plane, size=(100, 200))
+            dock_occcupancy = Dock("Occupancy plane %d" % (2 * plane +1), size=(100, 200))
             dock_area.addDock(dock_occcupancy)
             occupancy_graphics = pg.GraphicsLayoutWidget()  # Plot docks
             occupancy_graphics.show()
@@ -38,7 +38,7 @@ class PybarMimosa26(Receiver):
             dock_occcupancy.addWidget(occupancy_graphics)
 
             # Dock right
-            dock_occcupancy_2 = Dock("Occupancy plane %d" % (2 * plane + 1), size=(100, 200))
+            dock_occcupancy_2 = Dock("Occupancy plane %d" % (2 * plane + 2), size=(100, 200))
             dock_area.addDock(dock_occcupancy_2, 'right', dock_occcupancy)  
             occupancy_graphics = pg.GraphicsLayoutWidget()  # Plot docks
             occupancy_graphics.show()

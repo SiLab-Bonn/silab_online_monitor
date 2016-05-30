@@ -1,7 +1,6 @@
 ''' Histograms the Mimosa26 hit table'''
 
 import time
-from zmq.utils import jsonapi
 import numpy as np
 from numba import njit
 
@@ -13,7 +12,7 @@ from online_monitor.utils import utils
 @njit
 def fill_occupanc_hist(hist, hits):  # Histogram the pixel hits per plane; JIT is faster then cythonized hist2d applied for each plane, since less looping is involved
     for hit_index in range(hits.shape[0]):
-        if hits[hit_index]['plane']!=0:
+        if hits[hit_index]['plane'] != 0:
             hist[hits[hit_index]['plane']-1][hits[hit_index]['column'], hits[hit_index]['row']] += 1
         ##if hits[hit_index]['plane']==0 do nothing. becuase plane=0 is TLU debug data
 

@@ -58,7 +58,10 @@ receiver :
         kind : hit_correlator
         frontend : tcp://127.0.0.1:6700
         devices :
-            - tcp://127.0.0.1:5600
-            - tcp://127.0.0.1:6600
-        max_n_rows : 337
-        max_n_columns : 81
+           address : tcp://127.0.0.1:5600
+           n_device : 6
+           max_n_rows : 337
+            tcp://127.0.0.1:6600
+               n_device : 1
+               max_n_rows : 337
+               max_n_columns : 81

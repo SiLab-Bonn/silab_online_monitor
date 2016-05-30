@@ -1,7 +1,7 @@
 producer_sim :
     DAQ0 :
         kind : pybar_fei4
-        delay : 1.015
+        delay : 0.2
         backend: tcp://127.0.0.1:5500
         data_file: /home/silab/Documents/testbeam/data_elsa_160307/mimosa/30_mmc32_telescope_5.h5
 
@@ -22,8 +22,8 @@ converter :
         backend : tcp://127.0.0.1:7700
         max_n_rows_fei4 : 337 
         max_n_columns_fei4 : 81
-        max_n_rows_m26 : 1152 
-        max_n_columns_m26 : 576
+        max_n_rows_m26 : 576 
+        max_n_columns_m26 : 1152
     DUT0_Histogrammer :
         kind : pybar_mimosa26_histogrammer
         frontend : tcp://127.0.0.1:5600
@@ -49,6 +49,6 @@ receiver :
             - tcp://127.0.0.1:6600
         max_n_rows_fei4 : 337 
         max_n_columns_fei4 : 81
-        max_n_rows_m26 : 1152 
-        max_n_columns_m26 : 576    
+        max_n_rows_m26 : 576 
+        max_n_columns_m26 : 1152    
     
