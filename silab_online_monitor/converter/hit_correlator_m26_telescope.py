@@ -156,4 +156,7 @@ class HitCorrelator(Transceiver):
                 self.all_hists_col_corr = np.zeros_like(self.all_hists_col_corr)
                 self.all_hists_row_corr = np.zeros_like(self.all_hists_row_corr)
             else:
-                    self.active_dut = int(command[0])
+                self.all_hists_col_corr = np.zeros_like(self.all_hists_col_corr)
+                self.all_hists_row_corr = np.zeros_like(self.all_hists_row_corr)
+                self.active_dut = int(command[0])
+
