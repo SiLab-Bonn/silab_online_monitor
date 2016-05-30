@@ -1,7 +1,7 @@
 producer_sim :
     DAQ0 :
         kind : pybar_fei4
-        delay : 0.2
+        delay : 0.15
         backend: tcp://127.0.0.1:5500
         data_file: /home/silab/Documents/testbeam/data_elsa_160307/mimosa/30_mmc32_telescope_5.h5
 

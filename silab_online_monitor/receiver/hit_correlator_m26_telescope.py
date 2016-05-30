@@ -27,9 +27,12 @@ class HitCorrelator(Receiver):
         self.occupancy_images_rows = {}
     
         for dut_index in range(7):
+            
             self.occupancy_images_columns[dut_index] = {}
-            self.occupancy_images_rows[dut_index]={}
+            self.occupancy_images_rows[dut_index] = {}
+            
             if dut_index==0:
+                
                 dock_area = DockArea()
                 dock_status = Dock("status", size=(100, 10))
                 self.tab_widget.addTab(dock_area, 'FEI4')
@@ -43,9 +46,9 @@ class HitCorrelator(Receiver):
                 dock_status.addWidget(cw)
                 reset_button.clicked.connect(lambda: self.send_command('RESET'))
                 
-                for i in range(0,6):
-                        dock_corr_column=Dock("Cols FEI4 to M26 %d" % i, size=(50, 50))# % dut_index+1 #, size=(400, 400))
-                        dock_corr_row=Dock("Rows FEI4 to M26 %d" % i, size=(50, 50)) 
+                for i in range(6):
+                        dock_corr_column=Dock("Cols FEI4 to M26 %d" % (i+1), size=(50, 50))# % dut_index+1 #, size=(400, 400))
+                        dock_corr_row=Dock("Rows FEI4 to M26 %d" % (i+1), size=(50, 50)) 
                         dock_area.addDock(dock_status, 'top')
                         dock_area.addDock(dock_corr_column)
                         dock_area.addDock(dock_corr_row, 'right', dock_corr_column) 
@@ -68,7 +71,7 @@ class HitCorrelator(Receiver):
                         view.setRange(QtCore.QRectF(0, 0, self.config['max_n_rows_fei4'], self.config['max_n_rows_fei4'])) 
                         dock_corr_row.addWidget(occupancy_graphics)
                         self.occupancy_images_rows[dut_index][i] = occupancy_images_rows
-                    
+                        
             else:
                 dock_area = DockArea()
                 dock_status = Dock("status", size=(100, 10))
@@ -83,12 +86,12 @@ class HitCorrelator(Receiver):
                 dock_status.addWidget(cw)
                 reset_button.clicked.connect(lambda: self.send_command('RESET'))
                 ii=0
-                for i in range(0,7):
+                for i in range(7):
                     if i==dut_index:
                         continue
                     else:
-                        dock_corr_column=Dock("Cols M26 %d - %d" % (dut_index , i), size=(50, 50))# % dut_index+1 #, size=(400, 400))
-                        dock_corr_row=Dock("Rows M26 %d - %d" % (dut_index , i), size=(50, 50))  
+                        dock_corr_column=Dock("Cols M26 %d to %d" % (dut_index , i), size=(50, 50))# % dut_index+1 #, size=(400, 400))
+                        dock_corr_row=Dock("Rows M26 %d to %d" % (dut_index , i), size=(50, 50))  
                 
                         dock_area.addDock(dock_status, 'top')
                         dock_area.addDock(dock_corr_column)
@@ -111,7 +114,7 @@ class HitCorrelator(Receiver):
                         view.setRange(QtCore.QRectF(0, 0, self.config['max_n_rows_m26'], self.config['max_n_rows_m26'])) 
                         dock_corr_row.addWidget(occupancy_graphics)
                         self.occupancy_images_rows[dut_index][ii] = occupancy_images_rows
-                        ii=ii+1            
+                        ii+=1            
         self.tab_widget.currentChanged.connect(lambda value: self.send_command(str(value)))
  
     def deserialze_data(self, data):
