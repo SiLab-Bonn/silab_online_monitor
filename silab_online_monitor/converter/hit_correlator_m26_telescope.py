@@ -33,7 +33,7 @@ class HitCorrelator(Transceiver):
         if self.active_dut==0:  ####TODO add FEI4 corr later
             return
         
-        event_n_step = 200 #amount of event_numbers in buffer
+        event_n_step = 100 #amount of event_numbers in buffer
         
         for actual_dut_data in data:
             frontend_data = actual_dut_data[1]
