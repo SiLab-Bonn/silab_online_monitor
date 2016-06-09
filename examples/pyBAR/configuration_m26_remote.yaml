@@ -1,11 +1,13 @@
 converter :
     DUT0_Interpreter :
         kind : pybar_mimosa26
-        frontend : tcp://131.220.167.118:5500
+        frontend : tcp://121.0.0.1:5500
+#        #frontend : tcp://131.220.167.118:5500
         backend : tcp://127.0.0.1:5600
     DUT1_Interpreter :
         kind : pybar_fei4
-        frontend : tcp://131.220.167.118:5500
+#       #frontend : tcp://131.220.167.118:5500
+        frontend : tcp://121.0.0.1:5500
         backend : tcp://127.0.0.1:6600
 #    HIT_Correlator :
 #        kind : hit_correlator_m26_telescope

@@ -16,8 +16,9 @@ class HitCorrelator(Transceiver):
         self.set_bidirectional_communication()  # We want to be able to change the histogrammmer settings
     
     def setup_interpretation(self):
-        self.active_dut1 = None # variable to store integer value of active duts
-        self.active_dut2 = None
+        self.start_signal = 1
+        self.active_dut1 = 0 # variable to store integer value of active duts
+        self.active_dut2 = 0
         self.data_buffer = {} # The data does not have to arrive at the same receive command since ZMQ buffers data and the DUT can have different time behavior
         self.data_buffer_max = np.zeros(2) #  store maximum event_number of each incoming data of each DUT 
         self.data_buffer_done = 0 #store event_number of already correlated events
@@ -34,10 +35,9 @@ class HitCorrelator(Transceiver):
         
         self.active_duts = [self.active_dut1,self.active_dut2] #store both active DUTs in array for reasons
         
-        for active_dut in self.active_duts: #wait until the two active DUTs both have data in buffer, maybe make pushbutton to start correlation
-            while active_dut == None:
-                print 'Select two planes to correlate...'
-                return
+        while self.start_signal != 0: #wait for user to select DUTs and press start
+            print "Press 'Start'-button"
+            return
          
         event_n_step = 1000 #amount of event_numbers in buffer
         
@@ -54,8 +54,8 @@ class HitCorrelator(Transceiver):
                 return
         
             for i,active_dut in enumerate(self.active_duts):
-                if frontend_type == 'm26':
-                    if active_dut == 0: #m26 key is the actual plane number from 1-6
+                if frontend_type == 'm26': #m26 key is the actual plane number from 1-6
+                    if active_dut == 0: # fei4 key is 0
                         continue
                     if i in self.data_buffer.keys():
                         self.data_buffer[i] = np.append(self.data_buffer[i],frontend_hits[frontend_hits['plane']==active_dut])
@@ -121,5 +121,12 @@ class HitCorrelator(Transceiver):
                 self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)#reset everytime you change dut
                 self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
                 self.data_buffer={}
- 
+            elif 'START' in command[0]:
+                self.start_signal = int(command[0].split()[1])
+#             elif 'MASK' in command[0]:    # make noisy pixel remover later
+#                 if '0' in command[0]:
+#                     self.mask_noisy_pixel = False
+#                 else:
+#                     self.mask_noisy_pixel = True   
+                
 
