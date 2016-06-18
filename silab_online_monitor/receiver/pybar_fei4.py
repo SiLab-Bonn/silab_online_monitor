@@ -21,7 +21,7 @@ class PybarFEI4(Receiver):
     def setup_widgets(self, parent, name):
         dock_area = DockArea()
         parent.addTab(dock_area, name)
-
+        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %d' % value)) # send active tab index to converter so that it only does something when user is looking at corresponding receiver
         # Docks
         dock_occcupancy = Dock("Occupancy", size=(400, 400))
         dock_run_config = Dock("Run configuration", size=(400, 400))

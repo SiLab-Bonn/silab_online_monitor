@@ -10,6 +10,7 @@ from online_monitor.utils import utils
 
 class PybarMimosa26(Transceiver):
 
+
     def setup_interpretation(self):
         self.interpreter = RawDataInterpreter()
         self.n_hits = 0
@@ -59,5 +60,6 @@ class PybarMimosa26(Transceiver):
             return utils.simple_enc(hits_data, data)
         else:
             return utils.simple_enc(None, data)
+            
             
         

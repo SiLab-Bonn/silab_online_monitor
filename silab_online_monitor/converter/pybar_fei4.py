@@ -10,6 +10,7 @@ from online_monitor.utils import utils
 
 class PybarFEI4(Transceiver):
 
+
     def setup_interpretation(self):
         self.interpreter = PyDataInterpreter()
         self.interpreter.set_warning_output(False)
@@ -59,3 +60,4 @@ class PybarFEI4(Transceiver):
             return utils.simple_enc(hits_data, data)
         else:
             return utils.simple_enc(None, data)
+            

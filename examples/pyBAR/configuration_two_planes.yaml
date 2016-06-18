@@ -3,7 +3,7 @@ producer_sim :
         kind : pybar_fei4
         delay : 0.05
         backend: tcp://127.0.0.1:5500
-        data_file: /home/pascal/Documents/testbeam/elsa_2016-05-31/91_test_m26_telescope_scan.h5
+        data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/91_test_m26_telescope_scan.h5
 #        data_file: /home/silab/Documents/testbeam/data_elsa_160307/mimosa/30_mmc32_telescope_5.h5
 
 converter :
@@ -36,9 +36,9 @@ converter :
         backend : tcp://127.0.0.1:6700
 
 receiver :
-#    DUT0 :
-#        kind : pybar_mimosa26
-#        frontend : tcp://127.0.0.1:5700
+    DUT0 :
+        kind : pybar_mimosa26
+        frontend : tcp://127.0.0.1:5700
     DUT1 :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:6700

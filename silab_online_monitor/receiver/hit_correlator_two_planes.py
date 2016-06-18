@@ -19,8 +19,7 @@ class HitCorrelator(Receiver):
 
     def setup_receiver(self):
         self.set_bidirectional_communication()  # We want to change converter settings
-#         self.active_dut1 = 0
-#         self.active_dut2 = 0
+        
     def setup_widgets(self, parent, name):
         #
         self.occupancy_images_columns =  {}
@@ -33,33 +32,40 @@ class HitCorrelator(Receiver):
             if dut_index == 0:
                 DUTS.append('FE-I4')
             else:
-                DUTS.append('MIMOSA%i' % dut_index)
+                DUTS.append('MIMOSA %i' % dut_index)
         #        
         dock_area = DockArea()
-        parent.addTab(dock_area, name)   
+        parent.addTab(dock_area, name)
+        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %d' % value)) # send active tab index to converter so that it only does something when user is looking at corresponding receiver
         #    
         dock_status = Dock("status")
+        dock_status.setMinimumSize(400,75)
         dock_status.setMaximumHeight(100)
         dock_select_duts = Dock("Select DUT's")
-        dock_select_duts.setMinimumSize(500,100)
-        dock_select_duts.setMaximumSize(800, 100)
+        dock_select_duts.setMinimumSize(400,75)
+        dock_select_duts.setMaximumHeight(100)
         dock_corr_column = Dock('Column-correlation')
-        dock_corr_column.setMinimumSize(500,500)
+        dock_corr_column.setMinimumSize(400,400)
         dock_corr_row = Dock('Row-correlation') 
-        dock_corr_row.setMinimumSize(500,500)
+        dock_corr_row.setMinimumSize(400,400)
         #
         cb = QtGui.QWidget()
         layout0 = QtGui.QGridLayout()
         cb.setLayout(layout0)
         self.combobox1 = Qt.QComboBox()
         self.combobox1.addItems(DUTS)
-        self.combobox1.setMinimumSize(175, 50)
+        self.combobox1.setMinimumSize(100, 50)
+        self.combobox1.setMaximumSize(200, 50)
         self.combobox2 = Qt.QComboBox()
         self.combobox2.addItems(DUTS)
-        self.combobox2.setMinimumSize(175, 50)
+        self.combobox2.setMinimumSize(100, 50)
+        self.combobox2.setMaximumSize(200, 50)
         self.select_label = QtGui.QLabel('Correlate:')
         self.select_label1 = QtGui.QLabel('    to    ')
         self.start_button = QtGui.QPushButton('Start')
+        #self.start_button.setStyleSheet('background-color: green')
+        self.start_button.setMinimumSize(75, 38)
+        self.start_button.setMaximumSize(150,38)
         layout0.addWidget(self.select_label, 0, 0, 0, 1)
         layout0.addWidget(self.combobox1, 0, 1, 0, 1)
         layout0.addWidget(self.select_label1, 0, 2, 0, 1)
@@ -77,27 +83,32 @@ class HitCorrelator(Receiver):
         layout.addWidget(reset_button, 0, 0, 0, 1)
         noisy_checkbox = QtGui.QCheckBox('Mask noisy pixels')
         layout.addWidget(noisy_checkbox, 0, 1, 0, 1)
+        self.rate_label = QtGui.QLabel("Readout Rate: Hz")
+        layout.addWidget(self.rate_label, 0, 2, 0, 1)
         dock_status.addWidget(cw)
         reset_button.clicked.connect(lambda: self.send_command('RESET'))
-        noisy_checkbox.stateChanged.connect(lambda value: self.send_command('MASK %d' % value))
+        noisy_checkbox.stateChanged.connect(lambda value: self.send_command('MASK %d' % value)) #FIXME: Does not do anything now
         #
         #Add plot docks for column corr
-        occupancy_graphics = pg.GraphicsLayoutWidget()
-        occupancy_graphics.show()
-        view = occupancy_graphics.addViewBox()
+        occupancy_graphics1 = pg.GraphicsLayoutWidget()
+        occupancy_graphics1.show()
+        view = occupancy_graphics1.addViewBox()
         occupancy_img_col = pg.ImageItem(border='w')
         view.addItem(occupancy_img_col)
         view.setRange(QtCore.QRectF(0, 0, self.config['max_n_columns_m26'], self.config['max_n_columns_m26'])) 
-        dock_corr_column.addWidget(occupancy_graphics)
+        dock_corr_column.addWidget(occupancy_graphics1)
+        #self.xLabel = QtGui.QLabel(self.combobox1.currentIndexChanged())
+        #self.xLabel.update()
+        #dock_corr_column.addWidget(self.xLabel)
         self.occupancy_images_columns = occupancy_img_col
         #Add plot docks for row corr
-        occupancy_graphics = pg.GraphicsLayoutWidget()
-        occupancy_graphics.show()
-        view = occupancy_graphics.addViewBox()
+        occupancy_graphics2 = pg.GraphicsLayoutWidget()
+        occupancy_graphics2.show()
+        view = occupancy_graphics2.addViewBox()
         occupancy_images_rows = pg.ImageItem(border='w')
         view.addItem(occupancy_images_rows)
         view.setRange(QtCore.QRectF(0, 0, self.config['max_n_rows_m26'], self.config['max_n_rows_m26'])) 
-        dock_corr_row.addWidget(occupancy_graphics)
+        dock_corr_row.addWidget(occupancy_graphics2)
         self.occupancy_images_rows = occupancy_images_rows  
         
         #
@@ -114,13 +125,8 @@ class HitCorrelator(Receiver):
         if 'meta_data' not in data:
             for key in data:
                 if 'column' == key:
-                    self.occupancy_images_columns.setImage(data[key][:,:], autoDownsample=True)
+                    self.occupancy_images_columns.setImage(data[key][:,:], autoDownsample = True)
                 if 'row' == key:
-                    self.occupancy_images_rows.setImage(data[key][:,:], autoDownsample=True)
-    
-#     def handle_command(self, command):
-#         if 'combobox1'in command[0]:
-#             self.active_dut1 = int(command[0].split()[1])
-#         if 'combobox2'in command[0]:
-#             self.active_dut2 = int(command[0].split()[1])          
-
+                    self.occupancy_images_rows.setImage(data[key][:,:], autoDownsample = True)
+        else:
+            self.rate_label.setText('Readout Rate: %d Hz' % data['meta_data']['fps']) #FIXME: Somehow does not show the same readout rate as fei4/m26 histogrammer

@@ -40,6 +40,8 @@ class PybarMimosa26Histogrammer(Transceiver):
         self.total_events = 0
         self.updateTime = time.time()
         self.mask_noisy_pixel = False
+        self.active_tab = None
+        self.dut0_hist_tab = 2 # FIXME: maybe better to do sth like DUT0.tabPosition() to get tab index of DUT0 histogrammer
         # Histogrammes from interpretation stored for summing
 #         self.error_counters = None
 #         self.trigger_error_counters = None
@@ -52,6 +54,9 @@ class PybarMimosa26Histogrammer(Transceiver):
         return meta
 
     def interpret_data(self, data):
+        if self.active_tab != self.dut0_hist_tab: # Only do something when user clicked on 'DUT0' in online_monitor ; DUT0-tab is #2
+            #print 'M26 hist doing nothing'
+            return
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
             now = time.time()
@@ -125,6 +130,8 @@ class PybarMimosa26Histogrammer(Transceiver):
                 self.mask_noisy_pixel = False
             else:
                 self.mask_noisy_pixel = True
+        elif 'ACTIVETAB' in command[0]:
+            self.active_tab = int(command[0].split()[1])
         else:
             self.n_readouts = int(command[0])
             self.occupancy_arrays = np.zeros(shape=(6, 1152, 576), dtype=np.int32)  # Reset occ hists
