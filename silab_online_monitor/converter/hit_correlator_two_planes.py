@@ -1,8 +1,7 @@
 from zmq.utils import jsonapi
 import numpy as np
-import sys
 import logging
-import time
+
 
 from online_monitor.converter.transceiver import Transceiver
 from online_monitor.utils import utils
@@ -19,14 +18,14 @@ class HitCorrelator(Transceiver):
     def setup_interpretation(self):
         #variables to determine whether to do sth or not
         self.active_tab = None # stores index of active tab in online monitor
-        self.hit_corr_tab = 3 # FIXME: maybe better to do sth like hit_corr.tabPosition() to get tab index of hit correlator
+        self.hit_corr_tab = 'Hit_Correlator' # store string of hit_correlator tab
         self.start_signal = 1 # correlation starts if this is set to 0
         #variables to store integer value of active duts
         self.active_dut1 = 0 
         self.active_dut2 = 0
         #variables fps
         self.fps = 0
-        self.updateTime = time.time()
+        self.updateTime = 0
         #data buffers
         self.data_buffer = {} # The data does not have to arrive at the same receive command since ZMQ buffers data and the DUT can have different time behavior
         self.data_buffer_max = np.zeros(2) #  store maximum event_number of each incoming data of each DUT 
@@ -42,7 +41,7 @@ class HitCorrelator(Transceiver):
         return meta
         
     def interpret_data(self, data):
-        
+
         if self.active_tab != self.hit_corr_tab: # Only do something when user clicked on 'hit_correlator' in online_monitor ; hit_correlator-tab is #3
             #print 'hit corr doing nothing'
             return
@@ -55,15 +54,14 @@ class HitCorrelator(Transceiver):
         
         if 'meta_data' in data[0][1]: # Meta data is directly forwarded to the receiver, only hit data is correlated; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
-            now = time.time()
-            recent_total_hits = meta_data['n_hits']
-            recent_total_events = meta_data['n_events']
-            recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
-            self.updateTime = now
-            self.fps = self.fps * 0.7 + recent_fps * 0.3
-            meta_data.update({'fps': self.fps})
-            return [data[0][1]]
-			
+            now = float(meta_data['timestamp_stop'])
+            if now != self.updateTime: #FIXME: sometimes = ZeroDivisionError: float division by zero
+                recent_fps = 1.0 / (now - self.updateTime)  #FIXME: does not show real rate, shows rate data was recorded with
+                self.updateTime = now
+                self.fps = self.fps * 0.7 + recent_fps * 0.3
+                meta_data.update({'fps': self.fps})
+                return [data[0][1]]
+        
         for actual_dut_data in data:
             frontend_data = actual_dut_data[1]
             
@@ -71,13 +69,13 @@ class HitCorrelator(Transceiver):
                 continue #used to be return: we don't want to return , we just want to skip
             
             frontend_hits = frontend_data['hits']
-            frontend_type = frontend_data['device_type']
             
             if frontend_hits.shape[0] == 0: # Empty array
                 return
         
             for i,active_dut in enumerate(self.active_duts):
-                if frontend_type == 'm26': #m26 key is the actual plane number from 1-6
+                try:
+                    frontend_hits['plane']  # Multiple plane data has this key word defined (e.g. Mimosa data)
                     if active_dut == 0: # fei4 key is 0
                         continue
                     if i in self.data_buffer.keys():
@@ -86,7 +84,7 @@ class HitCorrelator(Transceiver):
                         self.data_buffer[i] = frontend_hits[frontend_hits['plane']==active_dut]
                     if len(self.data_buffer[i]) != 0:
                         self.data_buffer_max[i]=np.max(self.data_buffer[i]['event_number'])
-                if frontend_type == 'fei4':
+                except ValueError:
                     if active_dut != 0: #fei4 key is 0
                         continue
                     if i in self.data_buffer.keys():
@@ -113,8 +111,8 @@ class HitCorrelator(Transceiver):
                 logging.warning('Histogram indices out of range!')
                 return   
             
-            self.hist_cols_corr[:,:] += hist_column_corr    
-            self.hist_rows_corr[:,:] += hist_row_corr
+            self.hist_cols_corr += hist_column_corr    
+            self.hist_rows_corr += hist_row_corr
             for i in range(2):
                 self.data_buffer[i] = self.data_buffer[i][self.data_buffer[i]['event_number'] > (self.event_n_step + self.data_buffer_done)] 
 
@@ -147,7 +145,7 @@ class HitCorrelator(Transceiver):
             elif 'START' in command[0]: # first choose two telescope planes and then press start button to correlate
                 self.start_signal = int(command[0].split()[1])
             elif 'ACTIVETAB' in command[0]: # 
-                self.active_tab = int(command[0].split()[1])
+                self.active_tab = str(command[0].split()[1])
 #             elif 'MASK' in command[0]:    # make noisy pixel remover later
 #                 if '0' in command[0]:
 #                     self.mask_noisy_pixel = False

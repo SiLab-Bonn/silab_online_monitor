@@ -36,7 +36,7 @@ class HitCorrelator(Receiver):
         #        
         dock_area = DockArea()
         parent.addTab(dock_area, name)
-        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %d' % value)) # send active tab index to converter so that it only does something when user is looking at corresponding receiver
+        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %s' % str(parent.tabText(value)))) # send active tab index to converter so that it only does something when user is looking at corresponding receiver
         #    
         dock_status = Dock("status")
         dock_status.setMinimumSize(400,75)
@@ -63,7 +63,14 @@ class HitCorrelator(Receiver):
         self.select_label = QtGui.QLabel('Correlate:')
         self.select_label1 = QtGui.QLabel('    to    ')
         self.start_button = QtGui.QPushButton('Start')
-        #self.start_button.setStyleSheet('background-color: green')
+        #self.start_button.setStyleSheet('QPushButton {border-style: outset}'
+                                        #'QPushButton {border-width: 2px}'
+                                        #'QPushButton {border-radius: 10px}'
+                                        #'QPushButton {border-color: black}'
+                                        #'QPushButton {font: bold 14px}'
+                                        #'QPushButton {min-width: 10em}'
+                                        #'QPushButton {padding: 6px}'
+                                        #'QPushButton:pressed {border-style: inset}')
         self.start_button.setMinimumSize(75, 38)
         self.start_button.setMaximumSize(150,38)
         layout0.addWidget(self.select_label, 0, 0, 0, 1)
@@ -129,4 +136,4 @@ class HitCorrelator(Receiver):
                 if 'row' == key:
                     self.occupancy_images_rows.setImage(data[key][:,:], autoDownsample = True)
         else:
-            self.rate_label.setText('Readout Rate: %d Hz' % data['meta_data']['fps']) #FIXME: Somehow does not show the same readout rate as fei4/m26 histogrammer
+            self.rate_label.setText('Readout Rate: %d Hz' % data['meta_data']['fps'])

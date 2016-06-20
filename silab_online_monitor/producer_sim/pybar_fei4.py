@@ -13,21 +13,21 @@ class pyBarFEI4Sim(ProducerSim):
 
     def setup_producer_device(self):
         ProducerSim.setup_producer_device(self)
-        with tb.openFile(self.config['data_file'], mode="r") as in_file_h5:
-            self.meta_data = in_file_h5.root.meta_data[:]
-            self.raw_data = in_file_h5.root.raw_data[:]
-            self.n_readouts = self.meta_data.shape[0]
+        self.in_file_h5 = tb.openFile(self.config['data_file'], mode="r")
+        self.meta_data = self.in_file_h5.root.meta_data[:]
+        self.raw_data = self.in_file_h5.root.raw_data
+        self.n_readouts = self.meta_data.shape[0]
 
-            try:
-                self.scan_parameter_name = in_file_h5.root.scan_parameters.dtype.names
-                self.scan_parameters = in_file_h5.root.scan_parameters[:]
-            except tb.NoSuchNodeError:
-                self.scan_parameter_name = 'No parameter'
-                self.scan_parameters = None
+        try:
+            self.scan_parameter_name = self.in_file_h5.root.scan_parameters.dtype.names
+            self.scan_parameters = self.in_file_h5.root.scan_parameters[:]
+        except tb.NoSuchNodeError:
+            self.scan_parameter_name = 'No parameter'
+            self.scan_parameters = None
 
-            self.readout_word_indeces = np.column_stack((self.meta_data['index_start'], self.meta_data['index_stop']))
-            self.actual_readout = 0
-            self.last_readout_time = None
+        self.readout_word_indeces = np.column_stack((self.meta_data['index_start'], self.meta_data['index_stop']))
+        self.actual_readout = 0
+        self.last_readout_time = None
 
     def get_data(self):  # Return the data of one readout
         if self.actual_readout < self.n_readouts:
@@ -78,3 +78,6 @@ class pyBarFEI4Sim(ProducerSim):
             self.sender.send(data[0], flags=zmq.NOBLOCK)  # PyZMQ supports sending numpy arrays without copying any data
         except zmq.Again:
             pass
+        
+    def __del__(self):
+        self.in_file_h5.close()

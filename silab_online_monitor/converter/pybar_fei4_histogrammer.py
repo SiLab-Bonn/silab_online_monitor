@@ -1,6 +1,5 @@
 ''' Histograms the ATLAS-FEI4 hit table and integrated the interpretation histograms'''
 
-import time
 from zmq.utils import jsonapi
 import numpy as np
 
@@ -33,14 +32,13 @@ class PybarFEI4Histogrammer(Transceiver):
         self.plot_delay = 0
         self.total_hits = 0
         self.total_events = 0
-        self.updateTime = time.time()
+        self.updateTime = 0
         # Histogrammes from interpretation stored for summing
         self.tdc_counters = None
         self.error_counters = None
         self.service_records_counters = None
         self.trigger_error_counters = None
-        self.active_tab = None
-        self.dut1_hist_tab = 1 # FIXME: maybe better to do sth like DUT1.tabPosition() to get tab index of DUT1 histogrammer
+        
         
     def deserialze_data(self, data):
         #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
@@ -52,12 +50,10 @@ class PybarFEI4Histogrammer(Transceiver):
         
 
     def interpret_data(self, data):
-        if self.active_tab != self.dut1_hist_tab: # Only do something when user clicked on 'DUT1' in online_monitor ; DUT1-tab is #1
-            #print 'FEI4 hist doing nothing'
-            return
+        
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
-            now = time.time()
+            now = float(meta_data['timestamp_stop'])
             recent_total_hits = meta_data['n_hits']
             recent_total_events = meta_data['n_events']
             recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
@@ -134,7 +130,5 @@ class PybarFEI4Histogrammer(Transceiver):
             self.error_counters = np.zeros_like(self.error_counters)
             self.service_records_counters = np.zeros_like(self.service_records_counters)
             self.trigger_error_counters = np.zeros_like(self.trigger_error_counters)
-        elif 'ACTIVETAB' in command[0]:
-            self.active_tab = int(command[0].split()[1])
         else:
             self.n_readouts = int(command[0])

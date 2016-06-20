@@ -46,7 +46,6 @@ class PybarFEI4(Transceiver):
             'error_counters': self.interpreter.get_error_counters(),
             'service_records_counters': self.interpreter.get_service_records_counters(),
             'trigger_error_counters': self.interpreter.get_trigger_error_counters(),
-            'device_type':'fei4'
         }
 
         self.interpreter.reset_histograms()  # For the summing of histograms the histogrammer converter is used
