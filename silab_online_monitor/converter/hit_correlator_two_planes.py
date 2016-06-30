@@ -1,14 +1,14 @@
 from zmq.utils import jsonapi
 import numpy as np
 import logging
-
+import time
 
 from online_monitor.converter.transceiver import Transceiver
 from online_monitor.utils import utils
 
 from testbeam_analysis.tools import analysis_utils
 from numpy import corrcoef
-
+from pyBAR_mimosa26_interpreter import analysis_functions, analysis_functions_1
 
 class HitCorrelator(Transceiver):
     
@@ -31,9 +31,9 @@ class HitCorrelator(Transceiver):
         self.data_buffer_max = np.zeros(2) #  store maximum event_number of each incoming data of each DUT 
         self.data_buffer_done = 0 #store event_number of already correlated events
         self.event_n_step = 2000 #amount of event_numbers in buffer
-        self.hist_cols_corr = np.zeros([self.config['max_n_columns_m26'],self.config['max_n_columns_m26']], dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
-        self.hist_rows_corr = np.zeros([self.config['max_n_rows_m26'],self.config['max_n_rows_m26']], dtype=np.uint32)  # used to be self.hists_row_corr /
-        
+        self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+        self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
+
     def deserialze_data(self, data):  # According to pyBAR data serilization
         datar, meta  = utils.simple_dec(data)
         if 'hits' in meta:
@@ -42,8 +42,7 @@ class HitCorrelator(Transceiver):
         
     def interpret_data(self, data):
 
-        if self.active_tab != self.hit_corr_tab: # Only do something when user clicked on 'hit_correlator' in online_monitor ; hit_correlator-tab is #3
-            #print 'hit corr doing nothing'
+        if self.active_tab != self.hit_corr_tab: # Only do something when user clicked on 'hit_correlator' in online_monitor
             return
         
         self.active_duts = [self.active_dut1,self.active_dut2] #store both active DUTs in array for reasons
@@ -55,7 +54,7 @@ class HitCorrelator(Transceiver):
         if 'meta_data' in data[0][1]: # Meta data is directly forwarded to the receiver, only hit data is correlated; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
             now = float(meta_data['timestamp_stop'])
-            if now != self.updateTime: #FIXME: sometimes = ZeroDivisionError: float division by zero
+            if now != self.updateTime: #FIXME: sometimes = ZeroDivisionError: because of https://github.com/SiLab-Bonn/pyBAR/issues/48
                 recent_fps = 1.0 / (now - self.updateTime)  #FIXME: does not show real rate, shows rate data was recorded with
                 self.updateTime = now
                 self.fps = self.fps * 0.7 + recent_fps * 0.3
@@ -66,7 +65,7 @@ class HitCorrelator(Transceiver):
             frontend_data = actual_dut_data[1]
             
             if 'meta_data' in frontend_data:  #meta_data is skipped
-                continue #used to be return: we don't want to return , we just want to skip
+                continue
             
             frontend_hits = frontend_data['hits']
             
@@ -98,55 +97,97 @@ class HitCorrelator(Transceiver):
             print 'Loading data of selected DUTs...'
             return
         
-        if np.min(self.data_buffer_max) > (self.event_n_step + self.data_buffer_done):
+        if len(self.data_buffer[0]) != 0 and len(self.data_buffer[1]) != 0:
             
-            active_dut1_data = self.data_buffer[0][self.data_buffer[0]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
-            active_dut2_data = self.data_buffer[1][self.data_buffer[1]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
-            merged_active_dut1_data, merged_active_dut2_data = analysis_utils.merge_on_event_number(active_dut1_data, active_dut2_data)
-            
-            try:
-                hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_m26'], self.config['max_n_rows_m26']))
-                hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_m26'], self.config['max_n_columns_m26']))
-            except IndexError:
-                logging.warning('Histogram indices out of range!')
-                return   
-            
-            self.hist_cols_corr += hist_column_corr    
-            self.hist_rows_corr += hist_row_corr
-            for i in range(2):
-                self.data_buffer[i] = self.data_buffer[i][self.data_buffer[i]['event_number'] > (self.event_n_step + self.data_buffer_done)] 
+            if np.min(self.data_buffer_max) > (self.event_n_step + self.data_buffer_done):
+                
+                if (self.active_dut1 != 0 and self.active_dut2 != 0) or (self.active_dut1 == 0 and self.active_dut2 == 0): #correlate m26 to m26 or fei4 to fei4
+                        
+                    active_dut1_data = self.data_buffer[0][self.data_buffer[0]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
+                    active_dut2_data = self.data_buffer[1][self.data_buffer[1]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
+        
+                    merged_active_dut1_data, merged_active_dut2_data = analysis_utils.merge_on_event_number(active_dut1_data, active_dut2_data)
+                
+                    try:
+                        if self.active_dut1 != 0 and self.active_dut2 != 0:
+                            hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_m26'], self.config['max_n_rows_m26']))
+                            hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_m26'], self.config['max_n_columns_m26']))
+                        else:
+                            hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_fei4'], self.config['max_n_rows_fei4']))
+                            hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_fei4'], self.config['max_n_columns_fei4']))
 
-            self.data_buffer_done = self.event_n_step + self.data_buffer_done
-            
-            return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
+                    except IndexError:
+                        logging.warning('Histogram indices out of range!')
+                        return   
+                    
+                    self.hist_cols_corr += hist_column_corr    
+                    self.hist_rows_corr += hist_row_corr
+                    
+                    for i in range(2):
+                        self.data_buffer[i] = self.data_buffer[i][self.data_buffer[i]['event_number'] > (self.event_n_step + self.data_buffer_done)] #clearing buffer
+                    
+                    self.data_buffer_done = self.event_n_step + self.data_buffer_done #setting the new data_buffer_done
+                
+                    return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
+                
+                elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
+                    fe_index , m26_index = analysis_functions_1.build_corr_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
+                    self.data_buffer[0]=self.data_buffer[0][fe_index :]
+                    self.data_buffer[1]=self.data_buffer[1][m26_index :]
+                    return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
+                
+                elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
+                    fe_index , m26_index = analysis_functions_1.build_corr_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
+                    self.data_buffer[1]=self.data_buffer[1][fe_index :]
+                    self.data_buffer[0]=self.data_buffer[0][m26_index :]
+                    return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
+                else:
+                    return
+            else:
+                return
         else:
             return
-
     
     def serialze_data(self, data):
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)
         #return utils.simple_enc(None, data)
         
     def handle_command(self, command):
-            if command[0] == 'RESET':
-                self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)
-                self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
-                self.data_buffer={}
-            elif 'combobox1'in command[0]:
-                self.active_dut1 = int(command[0].split()[1])
-                self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)#reset everytime you change dut
-                self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
-                self.data_buffer={}
-            elif 'combobox2'in command[0]:
-                self.active_dut2 = int(command[0].split()[1])
-                self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)#reset everytime you change dut
-                self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
-                self.data_buffer={}
-            elif 'START' in command[0]: # first choose two telescope planes and then press start button to correlate
-                self.start_signal = int(command[0].split()[1])
-            elif 'ACTIVETAB' in command[0]: # 
-                self.active_tab = str(command[0].split()[1])
-#             elif 'MASK' in command[0]:    # make noisy pixel remover later
+        def reset():
+            self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)
+            self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
+            self.data_buffer={}
+        if command[0] == 'RESET':
+            reset()
+        elif 'combobox1'in command[0]:
+            self.active_dut1 = int(command[0].split()[1])
+            reset()
+        elif 'combobox2'in command[0]:
+            self.active_dut2 = int(command[0].split()[1])
+            reset()
+        elif 'START' in command[0]: # first choose two telescope planes and then press start button to correlate
+            self.start_signal = int(command[0].split()[1])
+        elif 'ACTIVETAB' in command[0]: # 
+            self.active_tab = str(command[0].split()[1])
+        def get_hist_size(dut1, dut2):
+            if dut1 == 0 and dut2 == 0:
+                self.hist_cols_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_columns_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                self.hist_rows_corr = np.zeros((self.config['max_n_rows_fei4'],self.config['max_n_rows_fei4']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                reset()
+            elif dut1 == 0 and dut2 != 0:
+                self.hist_cols_corr = np.zeros((self.config['max_n_rows_fei4'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                self.hist_rows_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                reset()
+            elif dut1 != 0 and dut2 == 0:
+                self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_rows_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_columns_fei4']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                reset()
+            else:
+                self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                reset()
+        get_hist_size(self.active_dut1, self.active_dut2)
+#             elif 'MASK' in command[0]:    #FIXME: make noisy pixel remover later
 #                 if '0' in command[0]:
 #                     self.mask_noisy_pixel = False
 #                 else:

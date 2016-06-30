@@ -99,25 +99,25 @@ class HitCorrelator(Receiver):
         #Add plot docks for column corr
         occupancy_graphics1 = pg.GraphicsLayoutWidget()
         occupancy_graphics1.show()
-        view = occupancy_graphics1.addViewBox()
+        view1 = occupancy_graphics1.addViewBox()
         occupancy_img_col = pg.ImageItem(border='w')
-        view.addItem(occupancy_img_col)
-        view.setRange(QtCore.QRectF(0, 0, self.config['max_n_columns_m26'], self.config['max_n_columns_m26'])) 
-        dock_corr_column.addWidget(occupancy_graphics1)
-        #self.xLabel = QtGui.QLabel(self.combobox1.currentIndexChanged())
-        #self.xLabel.update()
-        #dock_corr_column.addWidget(self.xLabel)
+        #view1.setRange(QtCore.QRectF(0, 0, self.config['max_n_columns_m26'], self.config['max_n_columns_m26']))
+        #make plotwidget with axis
+        plot1 = pg.PlotWidget(viewBox=view1,labels={'left': 'Column','bottom':'Column'})
+        plot1.addItem(occupancy_img_col)
+        dock_corr_column.addWidget(plot1)
         self.occupancy_images_columns = occupancy_img_col
         #Add plot docks for row corr
         occupancy_graphics2 = pg.GraphicsLayoutWidget()
         occupancy_graphics2.show()
-        view = occupancy_graphics2.addViewBox()
-        occupancy_images_rows = pg.ImageItem(border='w')
-        view.addItem(occupancy_images_rows)
-        view.setRange(QtCore.QRectF(0, 0, self.config['max_n_rows_m26'], self.config['max_n_rows_m26'])) 
-        dock_corr_row.addWidget(occupancy_graphics2)
-        self.occupancy_images_rows = occupancy_images_rows  
-        
+        view2 = occupancy_graphics2.addViewBox()
+        occupancy_img_rows = pg.ImageItem(border='w')
+        #view2.setRange(QtCore.QRectF(0, 0, self.config['max_n_rows_m26'], self.config['max_n_rows_m26'])) 
+        #make plotwidget with axis
+        plot2 =pg.PlotWidget(viewBox=view2, labels={'left': 'Row','bottom':'Row'})
+        plot2.addItem(occupancy_img_rows)
+        dock_corr_row.addWidget(plot2)
+        self.occupancy_images_rows = occupancy_img_rows  
         #
         dock_area.addDock(dock_status, 'top')
         dock_area.addDock(dock_select_duts, 'left')
