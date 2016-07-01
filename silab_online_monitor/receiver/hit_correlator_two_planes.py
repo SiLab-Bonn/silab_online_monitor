@@ -63,25 +63,30 @@ class HitCorrelator(Receiver):
         self.select_label = QtGui.QLabel('Correlate:')
         self.select_label1 = QtGui.QLabel('    to    ')
         self.start_button = QtGui.QPushButton('Start')
-        #self.start_button.setStyleSheet('QPushButton {border-style: outset}'
-                                        #'QPushButton {border-width: 2px}'
-                                        #'QPushButton {border-radius: 10px}'
-                                        #'QPushButton {border-color: black}'
-                                        #'QPushButton {font: bold 14px}'
-                                        #'QPushButton {min-width: 10em}'
-                                        #'QPushButton {padding: 6px}'
-                                        #'QPushButton:pressed {border-style: inset}')
+        self.stop_button = QtGui.QPushButton('Stop')
+#         self.start_button.setStyleSheet('QPushButton {border-style: outset}'
+#                                         'QPushButton {border-width: 2px}'
+#                                         'QPushButton {border-radius: 10px}'
+#                                         'QPushButton {border-color: black}'
+#                                         'QPushButton {font: bold 14px}'
+#                                         'QPushButton {min-width: 10em}'
+#                                         'QPushButton {padding: 6px}'
+#                                         'QPushButton:pressed {border-style: inset}')
         self.start_button.setMinimumSize(75, 38)
         self.start_button.setMaximumSize(150,38)
+        self.stop_button.setMinimumSize(75, 38)
+        self.stop_button.setMaximumSize(150,38)
         layout0.addWidget(self.select_label, 0, 0, 0, 1)
         layout0.addWidget(self.combobox1, 0, 1, 0, 1)
         layout0.addWidget(self.select_label1, 0, 2, 0, 1)
         layout0.addWidget(self.combobox2, 0, 3, 0, 1)
         layout0.addWidget(self.start_button, 0, 4, 0, 1)
+        layout0.addWidget(self.stop_button,0,5,0,1)
         dock_select_duts.addWidget(cb)
         self.combobox1.activated.connect(lambda value: self.send_command('combobox1 %d' % value))
         self.combobox2.activated.connect(lambda value: self.send_command('combobox2 %d' % value))
         self.start_button.clicked.connect(lambda value: self.send_command('START %d' % value))
+        self.stop_button.clicked.connect(lambda value: self.send_command('STOP %d' % value))
         #
         cw = QtGui.QWidget()
         layout = QtGui.QGridLayout()
@@ -101,7 +106,13 @@ class HitCorrelator(Receiver):
         occupancy_graphics1.show()
         view1 = occupancy_graphics1.addViewBox()
         occupancy_img_col = pg.ImageItem(border='w')
-        #view1.setRange(QtCore.QRectF(0, 0, self.config['max_n_columns_m26'], self.config['max_n_columns_m26']))
+        #color occupancy
+        poss = np.array([0.0, 0.5, 1.0])
+        color = np.array([[0,0,0,255],[255,175,128,255],[255,255,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
+        mapp = pg.ColorMap(poss, color)
+        lutt = mapp.getLookupTable(0.0, 1.0, 2506)
+        #
+        occupancy_img_col.setLookupTable(lutt, update=True)
         #make plotwidget with axis
         plot1 = pg.PlotWidget(viewBox=view1,labels={'left': 'Column','bottom':'Column'})
         plot1.addItem(occupancy_img_col)
@@ -112,7 +123,8 @@ class HitCorrelator(Receiver):
         occupancy_graphics2.show()
         view2 = occupancy_graphics2.addViewBox()
         occupancy_img_rows = pg.ImageItem(border='w')
-        #view2.setRange(QtCore.QRectF(0, 0, self.config['max_n_rows_m26'], self.config['max_n_rows_m26'])) 
+        #color occupancy
+        occupancy_img_rows.setLookupTable(lutt)
         #make plotwidget with axis
         plot2 =pg.PlotWidget(viewBox=view2, labels={'left': 'Row','bottom':'Row'})
         plot2.addItem(occupancy_img_rows)

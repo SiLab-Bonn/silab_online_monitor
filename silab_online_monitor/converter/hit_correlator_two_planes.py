@@ -48,7 +48,7 @@ class HitCorrelator(Transceiver):
         self.active_duts = [self.active_dut1,self.active_dut2] #store both active DUTs in array for reasons
 
         if self.start_signal != 0: #wait for user to press start
-            #print "Press 'Start'-button"
+            print "Press 'Start'-button"
             return
         
         if 'meta_data' in data[0][1]: # Meta data is directly forwarded to the receiver, only hit data is correlated; 0 from frontend index, 1 for data dict
@@ -153,22 +153,11 @@ class HitCorrelator(Transceiver):
         #return utils.simple_enc(None, data)
         
     def handle_command(self, command):
+        #declare functions
         def reset():
             self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)
             self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
             self.data_buffer={}
-        if command[0] == 'RESET':
-            reset()
-        elif 'combobox1'in command[0]:
-            self.active_dut1 = int(command[0].split()[1])
-            reset()
-        elif 'combobox2'in command[0]:
-            self.active_dut2 = int(command[0].split()[1])
-            reset()
-        elif 'START' in command[0]: # first choose two telescope planes and then press start button to correlate
-            self.start_signal = int(command[0].split()[1])
-        elif 'ACTIVETAB' in command[0]: # 
-            self.active_tab = str(command[0].split()[1])
         def get_hist_size(dut1, dut2):
             if dut1 == 0 and dut2 == 0:
                 self.hist_cols_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_columns_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
@@ -186,6 +175,23 @@ class HitCorrelator(Transceiver):
                 self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
                 self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
                 reset()
+        #commands
+        if command[0] == 'RESET':
+            reset()
+        elif 'combobox1'in command[0]:
+            self.active_dut1 = int(command[0].split()[1])
+            reset()
+        elif 'combobox2'in command[0]:
+            self.active_dut2 = int(command[0].split()[1])
+            reset()
+        elif 'START' in command[0]: # first choose two telescope planes and then press start button to correlate
+            self.start_signal = int(command[0].split()[1])
+        elif 'ACTIVETAB' in command[0]: # 
+            self.active_tab = str(command[0].split()[1])
+        elif 'STOP' in command[0]:
+            self.start_signal = 1
+            reset()
+            print "Stopped"
         get_hist_size(self.active_dut1, self.active_dut2)
 #             elif 'MASK' in command[0]:    #FIXME: make noisy pixel remover later
 #                 if '0' in command[0]:
