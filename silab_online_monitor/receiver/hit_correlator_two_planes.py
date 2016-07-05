@@ -107,10 +107,10 @@ class HitCorrelator(Receiver):
         view1 = occupancy_graphics1.addViewBox()
         occupancy_img_col = pg.ImageItem(border='w')
         #color occupancy
-        poss = np.array([0.0, 0.5, 1.0])
-        color = np.array([[0,0,0,255],[255,175,128,255],[255,255,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
+        poss = np.array([0.0, 0.6, 1.0])
+        color = np.array([[25,25,112,255],[173,255,47,255],[255,0,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
         mapp = pg.ColorMap(poss, color)
-        lutt = mapp.getLookupTable(0.0, 1.0, 2506)
+        lutt = mapp.getLookupTable(0.0, 1.0, 100)
         #
         occupancy_img_col.setLookupTable(lutt, update=True)
         #make plotwidget with axis
