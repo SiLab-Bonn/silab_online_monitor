@@ -8,8 +8,8 @@ from online_monitor.utils import utils
 
 from testbeam_analysis.tools import analysis_utils
 from numpy import corrcoef
-from pyBAR_mimosa26_interpreter import analysis_functions, analysis_functions_1
-from pybar_fei4_interpreter import analysis_functions
+from pyBAR_mimosa26_interpreter import analysis_functions, analysis_functions_1, correlation_functions
+#from pybar_fei4_interpreter import analysis_functions
 
 class HitCorrelator(Transceiver):
     
@@ -31,7 +31,7 @@ class HitCorrelator(Transceiver):
         self.data_buffer = {} # The data does not have to arrive at the same receive command since ZMQ buffers data and the DUT can have different time behavior
         self.data_buffer_max = np.zeros(2) #  store maximum event_number of each incoming data of each DUT 
         self.data_buffer_done = 0 #store event_number of already correlated events
-        self.event_n_step = 1000 #amount of event_numbers in buffer
+        self.event_n_step = 2000 #amount of event_numbers in buffer
         self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
         self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
 
@@ -42,14 +42,14 @@ class HitCorrelator(Transceiver):
         return meta
         
     def interpret_data(self, data):
-
+        
         if self.active_tab != self.hit_corr_tab: # Only do something when user clicked on 'hit_correlator' in online_monitor
             return
         
         self.active_duts = [self.active_dut1,self.active_dut2] #store both active DUTs in array for reasons
 
         if self.start_signal != 0: #wait for user to press start
-            print "Press 'Start'-button", self.start_signal
+            #print "Press 'Start'-button"
             return
         
         if 'meta_data' in data[0][1]: # Meta data is directly forwarded to the receiver, only hit data is correlated; 0 from frontend index, 1 for data dict
@@ -99,61 +99,64 @@ class HitCorrelator(Transceiver):
             return
         
         if len(self.data_buffer[0]) != 0 and len(self.data_buffer[1]) != 0:
-            print self.data_buffer_done
+            #print self.data_buffer_done
             if np.min(self.data_buffer_max) > (self.event_n_step + self.data_buffer_done): #FIXME: self.data_buffer_done is growing; if statement is not fullfilled after certain time
-                
-                if (self.active_dut1 != 0 and self.active_dut2 != 0) or (self.active_dut1 == 0 and self.active_dut2 == 0): #correlate m26 to m26 or fei4 to fei4
-                      
-                    m0_index, m1_index = analysis_functions_1.build_corr_mm(self.data_buffer[0], self.data_buffer[1], self.hist_cols_corr, self.hist_rows_corr)
-                    self.data_buffer[0] = self.data_buffer[0][m0_index:]
-                    self.data_buffer[1] = self.data_buffer[1][m1_index:]
-                    self.data_buffer_done = self.event_n_step + self.data_buffer_done #setting the new data_buffer_done
-                    return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
-#                     active_dut1_data = self.data_buffer[0][self.data_buffer[0]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
-#                     active_dut2_data = self.data_buffer[1][self.data_buffer[1]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
-#           
-#                     merged_active_dut1_data, merged_active_dut2_data = analysis_utils.merge_on_event_number(active_dut1_data, active_dut2_data)
-#                   
-#                     try:
-#                         if self.active_dut1 != 0 and self.active_dut2 != 0:
-#                             hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_m26'], self.config['max_n_rows_m26']))
-#                             hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_m26'], self.config['max_n_columns_m26']))
-#                         else:
-#                             hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_fei4'], self.config['max_n_rows_fei4']))
-#                             hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_fei4'], self.config['max_n_columns_fei4']))
-#   
-#                     except IndexError:
-#                         logging.warning('Histogram indices out of range!')
-#                         return   
-#                       
-#                     self.hist_cols_corr += hist_column_corr    
-#                     self.hist_rows_corr += hist_row_corr
-#                       
-#                     for i in range(2):
-#                         self.data_buffer[i] = self.data_buffer[i][self.data_buffer[i]['event_number'] > (self.event_n_step + self.data_buffer_done)] #clearing buffer
-#                     
+
+                if (self.active_dut1 != 0 and self.active_dut2 != 0) or (self.active_dut1 == 0 and self.active_dut2 == 0): #correlate m26 to m26 or fei4 to fei4                    
+#                     m0_index, m1_index = analysis_functions_1.build_corr_mm(self.data_buffer[0], self.data_buffer[1], self.hist_cols_corr, self.hist_rows_corr)
+#                     self.data_buffer[0] = self.data_buffer[0][m0_index:]
+#                     self.data_buffer[1] = self.data_buffer[1][m1_index:]
 #                     self.data_buffer_done = self.event_n_step + self.data_buffer_done #setting the new data_buffer_done
-#                     
+#                     print m0_index, m1_index
 #                     return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
+                    
+                    active_dut1_data = self.data_buffer[0][self.data_buffer[0]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
+                    active_dut2_data = self.data_buffer[1][self.data_buffer[1]['event_number'] <= (self.event_n_step + self.data_buffer_done)]
+            
+                    merged_active_dut1_data, merged_active_dut2_data = analysis_utils.merge_on_event_number(active_dut1_data, active_dut2_data)
+                    
+                    try:
+                        if self.active_dut1 != 0 and self.active_dut2 != 0:
+                            hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_m26'], self.config['max_n_rows_m26']))
+                            hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_m26'], self.config['max_n_columns_m26']))
+                        else:
+                            hist_row_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['row'], merged_active_dut2_data['row'], shape=(self.config['max_n_rows_fei4'], self.config['max_n_rows_fei4']))
+                            hist_column_corr = analysis_utils.hist_2d_index(merged_active_dut1_data['column'], merged_active_dut2_data['column'], shape=(self.config['max_n_columns_fei4'], self.config['max_n_columns_fei4']))
+    
+                    except IndexError:
+                        logging.warning('Histogram indices out of range!')
+                        return   
+                        
+                    self.hist_cols_corr += hist_column_corr    
+                    self.hist_rows_corr += hist_row_corr
+                        
+                    for i in range(2):
+                        self.data_buffer[i] = self.data_buffer[i][self.data_buffer[i]['event_number'] > (self.event_n_step + self.data_buffer_done)] #clearing buffer
+                      
+                    self.data_buffer_done = self.event_n_step + self.data_buffer_done #setting the new data_buffer_done
+                      
+                    return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                 
                 elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
-                    fe_index , m26_index = analysis_functions_1.build_corr_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
+                    fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
                     self.data_buffer[0]=self.data_buffer[0][fe_index :]
                     self.data_buffer[1]=self.data_buffer[1][m26_index :]
                     return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
-                
+                    
                 elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
-                    fe_index , m26_index = analysis_functions_1.build_corr_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
+                    print "++++++++++++++buffer length",len(self.data_buffer[1]),len(self.data_buffer[0])
+                    fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
+                    print "++++++++++++++returned index",fe_index , m26_index
                     self.data_buffer[1]=self.data_buffer[1][fe_index :]
                     self.data_buffer[0]=self.data_buffer[0][m26_index :]
                     return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                 else:
                     return
             else:
-                print "Filling buffer..."
+                #print "Filling buffer..."
                 return
         else:
-            print "Data buffer empty!"
+            #print "Data buffer empty!"
             return
     
     def serialze_data(self, data):
