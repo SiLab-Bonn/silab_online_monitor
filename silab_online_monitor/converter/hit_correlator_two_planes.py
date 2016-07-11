@@ -102,15 +102,24 @@ class HitCorrelator(Transceiver):
             #print self.data_buffer_done
             if True:#np.min(self.data_buffer_max) > (self.event_n_step + self.data_buffer_done): #FIXME: self.data_buffer_done is growing; if statement is not fullfilled after certain time
 
-                if self.active_dut1 != 0 and self.active_dut2 != 0: #correlate m26 to m26                    
-                     m0_index, m1_index = correlation_functions.correlate_mm(self.data_buffer[0], self.data_buffer[1], self.hist_cols_corr, self.hist_rows_corr)
-                     self.data_buffer[0] = self.data_buffer[0][m0_index:]
-                     self.data_buffer[1] = self.data_buffer[1][m1_index:]
-                     return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
-                elif self.active_dut1 == 0 and self.active_dut2 == 0:
-                    return #TODO do fe fe just for fun
+                if self.active_dut1 != 0 and self.active_dut2 != 0: #correlate m26 to m26
+                                        
+                    m0_index, m1_index = correlation_functions.correlate_mm_fast(self.data_buffer[0], self.data_buffer[1], self.hist_cols_corr, self.hist_rows_corr)
+            
+                    if m0_index == -1 and m1_index == -1:
+                        print "Error! Outer loop terminated"
+                        return
+                    else:
+                        self.data_buffer[0] = self.data_buffer[0][m0_index:]
+                        self.data_buffer[1] = self.data_buffer[1][m1_index:]
+                        return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
+                        
+                elif self.active_dut1 == 0 and self.active_dut2 == 0: #correlate fe to fe, useless fei4 correlation with itself will be shown, instead of nothing
                     
-                    
+                    f0_index = correlation_functions.correlate_ff(self.data_buffer[0], self.hist_cols_corr, self.hist_rows_corr)
+                    self.data_buffer[0] = self.data_buffer[0][f0_index:]
+                    self.data_buffer[1] = self.data_buffer[1][f0_index:]
+                    return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                     
                     old_correaltion_on_event_number = """
             
@@ -143,12 +152,14 @@ class HitCorrelator(Transceiver):
                     """
                 
                 elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
+                    
                     fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
                     self.data_buffer[0]=self.data_buffer[0][fe_index :]
                     self.data_buffer[1]=self.data_buffer[1][m26_index :]
                     return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                     
                 elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
+                    
                     fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
                     self.data_buffer[1]=self.data_buffer[1][fe_index :]
                     self.data_buffer[0]=self.data_buffer[0][m26_index :]
