@@ -8,7 +8,7 @@ from online_monitor.utils import utils
 
 from testbeam_analysis.tools import analysis_utils
 from numpy import corrcoef
-from pyBAR_mimosa26_interpreter import analysis_functions, analysis_functions_1, correlation_functions
+from pyBAR_mimosa26_interpreter import correlation_functions
 #from pybar_fei4_interpreter import analysis_functions
 
 class HitCorrelator(Transceiver):
