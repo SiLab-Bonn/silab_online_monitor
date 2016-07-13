@@ -1,67 +1,38 @@
 producer_sim :
     DAQ0 :
         kind : pybar_fei4
-        delay : 0.0015
+        delay : 0.1
         backend: tcp://127.0.0.1:5500
-        data_file: /home/pascal/git/silab_online_monitor/examples/pyBAR/102_scc_167_ext_trigger_scan.h5
+        data_file: /home/pascal/git/silab_online_monitor/examples/pyBAR/pybar_data.h5
         
     DAQ1 :
         kind : pybar_fei4
-        delay : 0.0015
+        delay : 0.1
         backend : tcp://127.0.0.1:6500
-        data_file: /home/pascal/git/silab_online_monitor/examples/pyBAR/102_scc_167_ext_trigger_scan.h5
-        
-#    DAQ2 :
-#        kind : pybar_fei4
-#        delay : 1.025
-#        backend : tcp://127.0.0.1:7550
-#        data_file: /home/pascal/git/silab_online_monitor/examples/pyBAR/138_proto_9_ext_trigger_scan.h5
+        data_file: /home/pascal/git/silab_online_monitor/examples/pyBAR/pybar_data.h5
 
 converter :
     DUT0_Interpreter :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:5500
         backend : tcp://127.0.0.1:5600
+    DUT0_Histogrammer :
+        kind : pybar_fei4_histogrammer
+        frontend : tcp://127.0.0.1:5600
+        backend : tcp://127.0.0.1:5700
     DUT1_Interpreter :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:6500
         backend : tcp://127.0.0.1:6600
-#    DUT2_Interpreter :
-#        kind : pybar_fei4
-#        frontend : tcp://127.0.0.1:7550
-#        backend : tcp://127.0.0.1:9600
-    HIT_Correlator :
-        kind : hit_correlator
-        frontend : 
-          - tcp://127.0.0.1:5600
-          - tcp://127.0.0.1:6600
-        backend : tcp://127.0.0.1:6700
-        max_n_rows : 337
-        max_n_columns : 81
-    DUT0_Histogrammer :
-        kind : pybar_fei4_histogrammer
-        frontend : tcp://127.0.0.1:5600
-        backend : tcp://127.0.0.1:7600
     DUT1_Histogrammer :
         kind : pybar_fei4_histogrammer
         frontend : tcp://127.0.0.1:6600
-        backend : tcp://127.0.0.1:7700
+        backend : tcp://127.0.0.1:6700
 
 receiver :
     DUT0 :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:7600
+        frontend : tcp://127.0.0.1:5700
     DUT1 :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:7700
-    Hit_Correlator :
-        kind : hit_correlator
         frontend : tcp://127.0.0.1:6700
-        devices :
-           address : tcp://127.0.0.1:5600
-           n_device : 6
-           max_n_rows : 337
-            tcp://127.0.0.1:6600
-               n_device : 1
-               max_n_rows : 337
-               max_n_columns : 81
