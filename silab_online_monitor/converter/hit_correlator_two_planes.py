@@ -4,9 +4,10 @@ import numpy as np
 import time
 import sys
 import psutil
-
+import gc
 from online_monitor.converter.transceiver import Transceiver
 from online_monitor.utils import utils
+from numba import njit
 
 #from testbeam_analysis.tools import analysis_utils
 #from numpy import corrcoef
@@ -42,8 +43,50 @@ class HitCorrelator(Transceiver):
         if 'hits' in meta:
             meta['hits'] = datar
         return meta
-        
+      
     def interpret_data(self, data):
+
+        ###########################################################################################################################################################################################################        
+        @njit
+        def correlate_mm(m0_data, m1_data, corr_col, corr_row):
+            #variables
+            m0_index = 0
+            m1_index = 0
+            #end
+            
+            if m0_data.shape[0] == 0 or m1_data.shape[0] == 0:
+                return m0_index, m1_index
+            
+            else:
+                
+                for m0_index in range(m0_data.shape[0]):
+                    
+                    m0_frame = m0_data[m0_index]['frame']
+
+                    while m1_index < m1_data.shape[0] - 1 and m1_data[m1_index]['frame'] < m0_frame: #keep frame up with outer frame
+                        m1_index += 1
+                    
+                    if m0_index == m0_data.shape[0] - 1 or m1_index == m1_data.shape[0] - 1: #return here if on of the data streams ends, so no correlation for current indices; add this data to next data and then correlate 
+                        return m0_index, m1_index
+                    
+                    for m1_i in range(m1_index, m1_data.shape[0]):
+                        
+                        m1_frame = m1_data[m1_i]['frame']
+                        
+                        if m1_i == m1_data.shape[0]-1 and m0_frame == m1_frame: #if we reach end of m1_data and frame numbers should still be correlated, return and add this data to next data stream
+                            return m0_index, m1_i
+                            
+                        #if frames are equal, fill histogramms
+                        
+                        if m0_frame == m1_frame:
+                            corr_col[m0_data[m0_index]['column'], m1_data[m1_i]['column']] += 1
+                            corr_row[m0_data[m0_index]['row'], m1_data[m1_i]['row']] += 1
+                            
+                        else:
+                            break
+                     
+                return -1, -1 #error, should not happen since we return in outer for-loop if one of the indices is m_data.shape[0] -1
+        ###########################################################################################################################################################################################################        
         
         if self.active_tab != self.hit_corr_tab: # Only do something when user clicked on 'hit_correlator' in online_monitor
             return
@@ -103,22 +146,24 @@ class HitCorrelator(Transceiver):
         #print 'MEMORY', process.memory_info()
         
         ### make corr
-        if self.active_dut1 != 0 and self.active_dut2 != 0: #correlate m26 to m26    
-            m0_index, m1_index = correlation_functions.correlate_mm(self.data_buffer[0], self.data_buffer[1], self.hist_cols_corr, self.hist_rows_corr)
+        if self.active_dut1 != 0 and self.active_dut2 != 0: #correlate m26 to m26
+            m0_index, m1_index = correlate_mm(self.data_buffer[0], self.data_buffer[1], self.hist_cols_corr, self.hist_rows_corr)
             if m0_index == -1 and m1_index == -1:
                 print "Error! Outer loop terminated"
                 return
             
-            self.data_buffer[0] =np.delete(self.data_buffer[0], np.arange(0,m0_index))
-            self.data_buffer[1] =np.delete(self.data_buffer[1], np.arange(0,m1_index))
+            self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,m0_index))
+            self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,m1_index))
             #self.data_buffer[0] = self.data_buffer[0][m0_index:]
             #self.data_buffer[1] = self.data_buffer[1][m1_index:]
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                 
-        elif self.active_dut1 == 0 and self.active_dut2 == 0: #correlate fe to fe, useless fei4 correlation with itself will be shown, instead of nothing
+        elif self.active_dut1 == 0 and self.active_dut2 == 0: #correlate fe to fe, fei4 correlation with itself will be shown, instead of nothing
             f0_index = correlation_functions.correlate_ff(self.data_buffer[0], self.hist_cols_corr, self.hist_rows_corr)
-            self.data_buffer[0] = self.data_buffer[0][f0_index:]
-            self.data_buffer[1] = self.data_buffer[1][f0_index:]
+            self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,f0_index))
+            self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,f0_index))
+            #self.data_buffer[0] = self.data_buffer[0][f0_index:]
+            #self.data_buffer[1] = self.data_buffer[1][f0_index:]
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
             
             old_correaltion_on_event_number = """
@@ -154,15 +199,19 @@ class HitCorrelator(Transceiver):
         elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
             
             fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
-            self.data_buffer[0]=self.data_buffer[0][fe_index :]
-            self.data_buffer[1]=self.data_buffer[1][m26_index :]
+            self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,fe_index))
+            self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,m26_index))
+            #self.data_buffer[0]=self.data_buffer[0][fe_index :]
+            #self.data_buffer[1]=self.data_buffer[1][m26_index :]
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
             
         elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
             
             fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
-            self.data_buffer[1]=self.data_buffer[1][fe_index :]
-            self.data_buffer[0]=self.data_buffer[0][m26_index :]
+            self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,m26_index))
+            self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,fe_index))
+            #self.data_buffer[1]=self.data_buffer[1][fe_index :]
+            #self.data_buffer[0]=self.data_buffer[0][m26_index :]
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
         else:
             return
@@ -174,11 +223,16 @@ class HitCorrelator(Transceiver):
         #return utils.simple_enc(None, data)
         
     def handle_command(self, command):
-        #declare functions
+        ###declare functions
+        
+        ###reset histogramms and data buffer, call garbage collector
         def reset():
             self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)
             self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
             self.data_buffer={}
+            gc.collect() #garbage collector is called to remove free unused memory
+        
+        ###determine the needed histogramm size according to selected DUTs
         def get_hist_size(dut1, dut2):
             if dut1 == 0 and dut2 == 0:
                 self.hist_cols_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_columns_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
@@ -196,7 +250,8 @@ class HitCorrelator(Transceiver):
                 self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
                 self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
                 reset()
-        #commands
+        
+        ###commands
         if command[0] == 'RESET':
             reset()
         elif 'combobox1'in command[0]:
@@ -212,8 +267,10 @@ class HitCorrelator(Transceiver):
         elif 'STOP' in command[0]:
             self.start_signal = int(command[0].split()[1])+1
             reset()
-            #return [{'column' : np.zeros((1000,1000),dtype=np.uint32), 'row' : np.zeros((1000,1000),dtype=np.uint32)}] #try to set empty image in viewbox
+            
         get_hist_size(self.active_dut1, self.active_dut2)
+
+
 #             elif 'MASK' in command[0]:    #FIXME: make noisy pixel remover later
 #                 if '0' in command[0]:
 #                     self.mask_noisy_pixel = False
