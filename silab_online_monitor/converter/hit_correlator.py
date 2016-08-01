@@ -1,6 +1,6 @@
 from zmq.utils import jsonapi
 import numpy as np
-import sys
+import sys, time
 import psutil
 import gc
 from online_monitor.converter.transceiver import Transceiver
@@ -32,6 +32,13 @@ class HitCorrelator(Transceiver):
         self.data_buffer = {} # the data does not have to arrive at the same receive command since ZMQ buffers data and the DUT can have different time behavior
         self.hist_cols_corr = 0 # must be a np.array with dimensions cols x cols; will be set by get_hist_size function in handle_command function
         self.hist_rows_corr = 0 # must be a np.array with dimensions rows x rows; will be set by get_hist_size function in handle_command function
+
+#         ### make measurements of avg cpu load and memory
+#          self.procss = psutil.Process(self.ident)
+#          self.prs_avg_cpu = 0
+#          self.avg_cpu = 0
+#          self.n = 1.0
+#          self.avg_ram = 0
 
     def deserialze_data(self, data):  # According to pyBAR data serilization
         datar, meta  = utils.simple_dec(data)
@@ -96,11 +103,14 @@ class HitCorrelator(Transceiver):
             return
         ### if one of the data buffer keys data is empty return
         elif len(self.data_buffer[0]) == 0 or len(self.data_buffer[1]) == 0:
-            return 
+            return
         
-        ### debug print 
-        #process = psutil.Process(self.ident)  # access this process info
-        #print 'MEMORY', process.memory_info()
+#         ###get average system characteristics over hit correlator runtime
+#         self.prs_avg_cpu += self.procss.cpu_percent()
+#         self.avg_cpu += psutil.cpu_percent()
+#         memoryy = psutil.virtual_memory()
+#         self.avg_ram += (memoryy.total-memoryy.available)/1024.0**2 #(memory.total - memory.available) - (memory.buffers + memory.cached) #according to htop
+#         self.n += 1.0
         
         ### make correlation
         if self.active_dut1 != 0 and self.active_dut2 != 0: #correlate m26 to m26
@@ -203,7 +213,10 @@ class HitCorrelator(Transceiver):
         elif 'STOP' in command[0]: # received whenever 'Stop'-button is pressed; set start signal to 1
             self.start_signal = int(command[0].split()[1])+1
             print '\n'
-            print '#######################', ' STOP ', '#######################\n' 
+            print '#######################', ' STOP ', '#######################\n'
+#             print "AVERAGE CPU ==", self.avg_cpu / self.n
+#             print "AVERAGE PROCESS CPU ==", self.prs_avg_cpu / self.n
+#             print "AVERAGE RAM ==", self.avg_ram / self.n
             reset()
             
         get_hist_size(self.active_dut1, self.active_dut2) # execute get_hist_size after DUTs have been selected in GUI
