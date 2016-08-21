@@ -2,6 +2,7 @@ from zmq.utils import jsonapi
 import numpy as np
 import sys, time
 import psutil
+import logging
 import gc
 from online_monitor.converter.transceiver import Transceiver
 from online_monitor.utils import utils
@@ -9,7 +10,7 @@ from numba import njit
 
 #from testbeam_analysis.tools import analysis_utils
 #from numpy import corrcoef
-from pyBAR_mimosa26_interpreter import correlation_functions
+from pyBAR_mimosa26_interpreter import correlation_functions, correlatefm_test
 #from pybar_fei4_interpreter import analysis_functions
 
 class HitCorrelator(Transceiver):
@@ -28,6 +29,12 @@ class HitCorrelator(Transceiver):
         ### variables fps
         self.fps = 0
         self.updateTime = 0
+        ### mask noisy pixels
+        self.mask_noisy_pixel = False
+        self.mask_noisy_checkbox = 0
+        ### transpose cols and rows due to fei4 rotation
+        self.transpose = True # this is true for our setup
+        self.transpose_checkbox = 0
         ### data buffer and histogramms
         self.data_buffer = {} # the data does not have to arrive at the same receive command since ZMQ buffers data and the DUT can have different time behavior
         self.hist_cols_corr = 0 # must be a np.array with dimensions cols x cols; will be set by get_hist_size function in handle_command function
@@ -136,10 +143,10 @@ class HitCorrelator(Transceiver):
                     
         elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
             ### main correlation function
-            fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
-            
+            fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2, self.transpose)
+            #print fe_index,m26_index
             if fe_index == -1 and m26_index == -1:
-                print "Error! Outer loop terminated"
+                logging.error('Outer loop terminated! Mimosa index equal or greater then length of data array!')
                 return
             
             self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,fe_index))
@@ -148,10 +155,10 @@ class HitCorrelator(Transceiver):
             
         elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
             ### main correlation function
-            fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2)
-            
+            fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2, self.transpose)
+            #print fe_index, m26_index
             if fe_index == -1 and m26_index == -1:
-                print "Error! Outer loop terminated"
+                logging.error('Outer loop terminated! Mimosa index equal or greater then length of data array!')
                 return
             
             self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,m26_index))
@@ -172,22 +179,30 @@ class HitCorrelator(Transceiver):
         def reset():
             self.hist_cols_corr = np.zeros_like(self.hist_cols_corr)
             self.hist_rows_corr = np.zeros_like(self.hist_rows_corr)
-            self.data_buffer={}#
-            gc.collect() #garbage collector is called to remove free unused memory
+            self.data_buffer={}
+            gc.collect() #garbage collector is called to free unused memory
         
-        ### determine the needed histogramm size according to selected DUTs
-        def get_hist_size(dut1, dut2):
+        ### determine the needed histogramm size according to selected DUTs and transposed FEI4
+        def get_hist_size(dut1, dut2, transpose):
             if dut1 == 0 and dut2 == 0:
                 self.hist_cols_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_columns_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
                 self.hist_rows_corr = np.zeros((self.config['max_n_rows_fei4'],self.config['max_n_rows_fei4']), dtype=np.uint32)  # used to be self.hists_row_corr /
                 reset()
             elif dut1 == 0 and dut2 != 0:
-                self.hist_cols_corr = np.zeros((self.config['max_n_rows_fei4'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
-                self.hist_rows_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                if transpose == True:
+                    self.hist_cols_corr = np.zeros((self.config['max_n_rows_fei4'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                    self.hist_rows_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                else:
+                    self.hist_cols_corr = np.zeros((self.config['max_n_columns_fei4'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                    self.hist_rows_corr = np.zeros((self.config['max_n_rows_fei4'],self.config['max_n_rows_m26']), dtype=np.uint32)  # used to be self.hists_row_corr /
                 reset()
             elif dut1 != 0 and dut2 == 0:
-                self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_rows_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
-                self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_columns_fei4']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                if transpose == True:
+                    self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_rows_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                    self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_columns_fei4']), dtype=np.uint32)  # used to be self.hists_row_corr /
+                else:
+                    self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_fei4']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
+                    self.hist_rows_corr = np.zeros((self.config['max_n_rows_m26'],self.config['max_n_rows_fei4']), dtype=np.uint32)  # used to be self.hists_row_corr /
                 reset()
             else:
                 self.hist_cols_corr = np.zeros((self.config['max_n_columns_m26'],self.config['max_n_columns_m26']), dtype=np.uint32) # used to be self.hists_column_corr / empty dict to save every dut with its IP as key and data as value
@@ -200,12 +215,13 @@ class HitCorrelator(Transceiver):
             reset()
         elif 'combobox1'in command[0]: # received signal is 'combobox1 value' where value is position of combobox 1; 0 ==fe, 1-6 == m26_1 -m26_6
             self.active_dut1 = int(command[0].split()[1])
-            reset()
+            get_hist_size(self.active_dut1, self.active_dut2, self.transpose) # execute get_hist_size after DUTs have been selected in GUI
         elif 'combobox2'in command[0]: # received signal is 'combobox2 value' where value is position of combobox 2; 0 ==fe, 1-6 == m26_1 -m26_6
             self.active_dut2 = int(command[0].split()[1])
-            reset()
+            get_hist_size(self.active_dut1, self.active_dut2, self.transpose) # execute get_hist_size after DUTs have been selected in GUI
         elif 'START' in command[0]: # first choose two telescope planes and then press start button to correlate
             self.start_signal = int(command[0].split()[1])
+            get_hist_size(self.active_dut1, self.active_dut2, self.transpose) # execute get_hist_size after DUTs have been selected in GUI
             print '\n'
             print '#######################', ' START ', '#######################\n'
         elif 'ACTIVETAB' in command[0]: # received signal is 'ACTIVETAB tab' where tab is the name (str) of the selected tab in online monitor
@@ -218,10 +234,21 @@ class HitCorrelator(Transceiver):
 #             print "AVERAGE PROCESS CPU ==", self.prs_avg_cpu / self.n
 #             print "AVERAGE RAM ==", self.avg_ram / self.n
             reset()
-            
-        get_hist_size(self.active_dut1, self.active_dut2) # execute get_hist_size after DUTs have been selected in GUI
-
-#         elif 'MASK' in command[0]:    #FIXME: make noisy pixel remover later
-
+        elif 'MASK' in command[0]: # FIXME
+            self.mask_noisy_checkbox = int(command[0].split()[1])
+            if self.mask_noisy_checkbox == 0:
+                self.mask_noisy_pixel = False
+            elif self.mask_noisy_checkbox == 2:
+                self.mask_noisy_pixel = True
+            print 'Noisy pixel cut not implemented yet!' # FIXME
+        elif 'TRANSPOSE' in command[0]:
+            self.transpose_checkbox = int(command[0].split()[1])
+            if self.active_dut1 == 0 or self.active_dut2 == 0:
+                if self.transpose_checkbox == 0: # transpose_checkbox is not checked
+                    self.transpose = True
+                elif self.transpose_checkbox == 2: # transpose_checkbox is checked
+                    self.transpose = False
+                get_hist_size(self.active_dut1, self.active_dut2, self.transpose) # execute get_hist_size after DUTs have been selected in GUI
+                
                 
 
