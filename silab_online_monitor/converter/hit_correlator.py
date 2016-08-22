@@ -10,7 +10,7 @@ from numba import njit
 
 #from testbeam_analysis.tools import analysis_utils
 #from numpy import corrcoef
-from pyBAR_mimosa26_interpreter import correlation_functions, correlatefm_test
+from pyBAR_mimosa26_interpreter import correlation_functions
 #from pybar_fei4_interpreter import analysis_functions
 
 class HitCorrelator(Transceiver):
