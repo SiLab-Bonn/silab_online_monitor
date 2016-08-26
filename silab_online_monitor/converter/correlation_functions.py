@@ -133,15 +133,33 @@ def correlate_fm(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpose = 
     
     
 @njit
-def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpose = True): #beta; do not consider trigger overflow
-    #initialise variables
+def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpose = True):
+    '''
+    Main function to correlate fe to mimosa data. Correlates data on trigger number, where fe_trigger is assigned to a trigger range of mimosa frames.
+    BETA: does consider trigger overflow of FEI4 trigger but does not correlate, skips correlation in overflow region
+    Parameters
+    ----------
+    fe_data: fe hit data of type 'numpy.ndarray' with data type of fe data
+    m26_data: mimosa hit data of type 'numpy.ndarray' with data type of mimosa data
+    corr_col: array to store column histogramm of type 'numpy.ndarray' with the correct shape=(column,column)
+    corr_row: array to store row histogramm of type 'numpy.ndarray' with the correct shape=(row,row)
+    dut1: integer; index of active dut 1, needed to determine which dut is the frontend and correlation order;  frontend to mimosa or mimosa to frontend
+    dut2: integer; index of active dut 2, needed to determine which dut is the frontend and correlation order;  frontend to mimosa or mimosa to frontend
+    transpose: boolean; if True the fe columns/rows correspond to mimosas rows/columns, if False; fe columns/rows to mimosa columns/rows 
+    
+    Returns
+    -------
+    fe_index: int index of m0_data where correlation stops. Data in data buffer below that index will be deleted, from will be kept. Next incoming data will be added to data buffer (dict), starting from m0_index (sth. like buffer[m0] = buffer[m0][m0_index: ].append(m0_data_new) )
+    m26_index: int index of m1_data where correlation stops. Data in data buffer below that index will be deleted, from will be kept. Next incoming data will be added to data buffer (dict), starting from m1_index (sth. like buffer[m1] = buffer[m1][m1_index: ].append(m1_data_new) )
+    '''
+    ###initialise variables
     #fei4
     fe_index = 0 # index
     fe_start = 0 # starting index
     fe_check = 0 # index to check whether correlation is possible within mimosa trigger range for current fe data
     #m26
     m26_index = 0 # index
-    #end of initialisation
+    ###end of initialisation
     
     if m26_data.shape[0] == 0 or fe_data.shape[0] == 0: # skip empty data
         return fe_start, m26_index
@@ -151,9 +169,6 @@ def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpo
         m26_frame = m26_data[m26_index]['frame'] # get mimosas frame number
         
         for m26_i in range(m26_index, m26_data.shape[0]):
-            
-            if m26_frame != m26_data[m26_i]['frame']: # do not correlate if frames are not equal
-                break
             
             m26_trigger_begin  = m26_data[m26_i]['trigger_number_begin'] # get mimosa trigger range
             m26_trigger_end = m26_data[m26_i]['trigger_number_end']
@@ -165,12 +180,11 @@ def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpo
                 else:
                     continue
             
-            if m26_trigger_begin > m26_trigger_end: # trigger overflow will be skipped here
+            if m26_trigger_begin > m26_trigger_end: # trigger overflow in mimosa range will be skipped here
                 if m26_i == m26_data.shape[0]-1:
                     return fe_start, m26_i
                 else:
                     continue
-            
             
             while fe_data[fe_start]['trigger_number'] & 0x7FFF < m26_trigger_begin: # keep up fe trigger with mimosa trigger range
                 if fe_start == fe_data.shape[0]-1:
@@ -180,11 +194,20 @@ def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpo
                 else:
                     fe_start += 1
                     
-            if fe_data[fe_start]['trigger_number'] & 0x7FFF > m26_trigger_begin: # keep up mimosa trigger range with fe trigger
+            if fe_data[fe_start]['trigger_number'] & 0x7FFF > m26_trigger_end and (m26_trigger_end - fe_data[fe_start]['trigger_number'] & 0x7FFF) & 0x7FFF > 0x4000: # keep up mimosa trigger range with fe trigger if fe trigger is NOT close to overflow
                 if m26_i == m26_data.shape[0]-1:
-                    return fe_start, m26_i 
+                    return fe_start, m26_i
                 else:
                     continue
+            
+            while fe_data[fe_start]['trigger_number'] & 0x7FFF > m26_trigger_end and (m26_trigger_end - fe_data[fe_start]['trigger_number'] & 0x7FFF) & 0x7FFF < 0x4000: # in case that fe trigger is > m26_trigger end and fe_is close to overflow, keep increasing fe_start index and avoid the trigger overflow area
+                if fe_start == fe_data.shape[0]-1:
+                    return fe_start, m26_i
+                else:
+                    fe_start += 1
+                    
+            if m26_frame != m26_data[m26_i]['frame']: # do not correlate if frames are not equal
+                break
                     
             fe_index = fe_start # set fe_index to correct starting index
             fe_check = fe_start # set fe_check to correct starting index
@@ -195,7 +218,7 @@ def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpo
                 else:
                     fe_check += 1
 
-                    
+            
             while fe_data[fe_index]['trigger_number'] & 0x7FFF >= m26_trigger_begin and fe_data[fe_index]['trigger_number'] & 0x7FFF <= m26_trigger_end: # correlate
                 
                 if transpose == True: # m26_col corresponds to fe_row and m26_row corresponds to fe_col because of our geometry of our telescope

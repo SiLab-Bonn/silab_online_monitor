@@ -122,6 +122,11 @@ class HitCorrelator(Receiver):
         occupancy_img_col.setLookupTable(lutt, update=True)
         #make plotwidget with axis
         plot1 = pg.PlotWidget(viewBox=view1,labels={'left': 'Column','bottom':'Column'})
+        #scale axis with pixel size in um
+        #plot1.getAxis('bottom').setScale(18.4)
+        #plot1.getAxis('bottom').setLabel(text='column',unit='m')
+        #plot1.getAxis('left').setScale(18.4)
+        #plot1.getAxis('left').setLabel(text='column / um',unit='m')
         plot1.addItem(occupancy_img_col)
         dock_corr_column.addWidget(plot1)
         self.occupancy_images_columns = occupancy_img_col
