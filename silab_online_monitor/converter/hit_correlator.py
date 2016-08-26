@@ -9,9 +9,10 @@ from online_monitor.utils import utils
 from numba import njit
 
 #from testbeam_analysis.tools import analysis_utils
-#from numpy import corrcoef
-from pyBAR_mimosa26_interpreter import correlation_functions
-#from pybar_fei4_interpreter import analysis_functions
+
+#from pyBAR_mimosa26_interpreter import correlation_functions
+
+from silab_online_monitor.converter import correlation_functions
 
 class HitCorrelator(Transceiver):
     
