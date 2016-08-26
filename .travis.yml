@@ -1,9 +1,7 @@
 language: python
 python:
 - 2.7
-#- 3.3
-#- 3.4
-#- 3.5
+- 3.5
 
 sudo: false
 
@@ -17,14 +15,19 @@ notifications:
   
 install:  
   # Use Miniconda python to have precompiled QT for user space 
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
   - chmod +x miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda update --yes conda
-  - conda install --yes pyqt pyyaml pyzmq blosc psutil numpy coverage cython pytables future nose docutils
+  - conda install --yes pyqt pyyaml pyzmq blosc psutil numpy coverage cython pytables future nose docutils enum34
   - pip install xvfbwrapper  # fake x server for Qt gui tests
   - pip install coveralls  # coverage testing
+
   # Install instructions valid for all python distributions
   - pip install https://github.com/SiLab-Bonn/pyBAR_mimosa26_interpreter/archive/master.zip
   - pip install https://github.com/SiLab-Bonn/pyqtgraph/archive/develop.zip  # Until working release is published
@@ -35,8 +38,11 @@ install:
 script:
   # Hack to allow tests coverage in multi processes, http://coverage.readthedocs.org/en/latest/subprocess.html
   - export COVERAGE_PROCESS_START=$PWD/.coveragerc
-  - touch $HOME/miniconda/lib/python2.7/site-packages/converage.pth
-  - printf "import coverage; coverage.process_startup()" > $HOME/miniconda/lib/python2.7/site-packages/converage.pth
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      touch $HOME/miniconda/lib/python2.7/site-packages/converage.pth && printf "import coverage; coverage.process_startup()" > $HOME/miniconda/lib/python2.7/site-packages/converage.pth;
+    else
+      touch $HOME/miniconda/lib/python3.5/site-packages/converage.pth && printf "import coverage; coverage.process_startup()" > $HOME/miniconda/lib/python3.5/site-packages/converage.pth;
+    fi
   - nosetests --with-coverage --cover-package=silab_online_monitor
 
 after_success:
