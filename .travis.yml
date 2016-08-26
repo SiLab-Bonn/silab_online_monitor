@@ -12,6 +12,8 @@ cache:
 notifications:
   email:
   - pohl@physik.uni-bonn.de
+  - thirono@uni-bonn.de
+  - s6plwolf@uni-bonn.de
   
 install:  
   # Use Miniconda python to have precompiled QT for user space 
@@ -24,7 +26,7 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda update --yes conda
-  - conda install --yes nomkl pyqt pyyaml pyzmq blosc psutil numpy coverage cython pytables future nose docutils
+  - conda install --yes pyqt pyyaml pyzmq blosc psutil numpy coverage cython pytables future nose docutils matplotlib
   - pip install xvfbwrapper  # fake x server for Qt gui tests
   - pip install coveralls  # coverage testing
 
