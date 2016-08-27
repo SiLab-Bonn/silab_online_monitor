@@ -176,19 +176,19 @@ def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpo
             
             if m26_trigger_begin == 0xFFFF or m26_trigger_end == 0xFFFF or m26_trigger_begin == 0 or m26_trigger_end == 0: # if mimosa frame has no trigger, trigger begin and end will be 0xFFFF; skip since we can not correlate; also skip 0 since we do not ant to deal with overflow
                 if m26_i == m26_data.shape[0]-1:
-                    return fe_start, m26_i
+                    return fe_start, m26_i+1 # increase by 1 because in this case we want to delete the last element in buffer as well
                 else:
                     continue
             
             if m26_trigger_begin > m26_trigger_end: # trigger overflow in mimosa range will be skipped here
                 if m26_i == m26_data.shape[0]-1:
-                    return fe_start, m26_i
+                    return fe_start, m26_i+1 # increase by 1 because in this case we want to delete the last element in buffer as well
                 else:
                     continue
             
             while fe_data[fe_start]['trigger_number'] & 0x7FFF < m26_trigger_begin: # keep up fe trigger with mimosa trigger range
                 if fe_start == fe_data.shape[0]-1:
-                    return fe_start, m26_i
+                    return fe_start+1, m26_i # increase by 1 because in this case we want to delete the last element in buffer as well
                 elif fe_data[fe_start]['trigger_number'] & 0x7FFF == m26_trigger_begin:
                     break
                 else:
@@ -196,13 +196,13 @@ def correlate_fm_beta(fe_data, m26_data, corr_col, corr_row, dut1, dut2, transpo
                     
             if fe_data[fe_start]['trigger_number'] & 0x7FFF > m26_trigger_end and (m26_trigger_end - fe_data[fe_start]['trigger_number'] & 0x7FFF) & 0x7FFF > 0x4000: # keep up mimosa trigger range with fe trigger if fe trigger is NOT close to overflow
                 if m26_i == m26_data.shape[0]-1:
-                    return fe_start, m26_i
+                    return fe_start, m26_i+1 # increase by 1 because in this case we want to delete the last element in buffer as well
                 else:
                     continue
             
             while fe_data[fe_start]['trigger_number'] & 0x7FFF > m26_trigger_end and (m26_trigger_end - fe_data[fe_start]['trigger_number'] & 0x7FFF) & 0x7FFF < 0x4000: # in case that fe trigger is > m26_trigger end and fe_is close to overflow, keep increasing fe_start index and avoid the trigger overflow area
                 if fe_start == fe_data.shape[0]-1:
-                    return fe_start, m26_i
+                    return fe_start+1, m26_i # increase by 1 because in this case we want to delete the last element in buffer as well
                 else:
                     fe_start += 1
                     

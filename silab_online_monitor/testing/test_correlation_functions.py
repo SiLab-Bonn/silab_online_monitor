@@ -193,7 +193,7 @@ class TestCorrelation(unittest.TestCase):
                     
         fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
-        self.assertEqual(fe_index, 3)
+        self.assertEqual(fe_index, 4)
         self.assertEqual(m26_index, 0)
         
     def test_fe_trig_zero_in_m26_range(self):
@@ -230,7 +230,7 @@ class TestCorrelation(unittest.TestCase):
         fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 0)
-        self.assertEqual(m26_index, 3)
+        self.assertEqual(m26_index, 4)
         
     def test_fe_trig_overflow_in_m26_range(self):
         
@@ -243,12 +243,31 @@ class TestCorrelation(unittest.TestCase):
         m26_data = np.array([(29123, 130515341L, 0x7FFF, 0x0001, 2, 35435470L, 555, 333L, 52171, 0),
                              (29123, 130515341L, 0x0000, 0x0001, 2, 35435470L, 666, 444L, 52171, 0),
                              (29123, 130515341L, 0x0001, 0x0001, 2, 35435470L, 555, 333L, 52171, 0),
-                             (29123, 130515341L, 0x0004, 0x0005, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
+                             (29123, 130515341L, 0x0001, 0x0005, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
                     
         fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 3)
         self.assertEqual(m26_index, 3)
+        
+    def test_fe_trig_overflow_in_m26_range_2(self):
+        
+        fe_data = np.array([(45593, 0xFFFFFFE, 7, 10, 40, 120, 3, 189, 0, 0, 1, 0L, 64),
+                            (45593, 0xFFFFFFF, 7, 10, 60, 180, 3, 189, 0, 0, 1, 0L, 64),
+                            (45593, 0xFFF0000, 7, 10, 60, 180, 3, 189, 0, 0, 1, 0L, 64),
+                            (45593, 0xFFF0001, 7, 10, 60, 180, 3, 189, 0, 0, 1, 0L, 64)
+                            ], self.fe_dtype)
+                            
+        m26_data = np.array([(29123, 130515341L, 0x7FFF, 0x0001, 2, 35435470L, 555, 333L, 52171, 0),
+                             (29123, 130515341L, 0x0000, 0x0001, 2, 35435470L, 666, 444L, 52171, 0),
+                             (29123, 130515341L, 0x0001, 0x0001, 2, 35435470L, 555, 333L, 52171, 0),
+                             (29123, 130515341L, 0x0002, 0x0005, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
+                    
+        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        
+        self.assertEqual(fe_index, 4)
+        self.assertEqual(m26_index, 3)
+
 
 
 if __name__ == '__main__':
