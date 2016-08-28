@@ -30,7 +30,7 @@ class HitCorrelator(Receiver):
         for dut_index in range(7):
             
             if dut_index == 0:
-                DUTS.append('FE-I4')
+                DUTS.append('FEI4')
             else:
                 DUTS.append('MIMOSA %i' % dut_index)
         #        
@@ -64,14 +64,6 @@ class HitCorrelator(Receiver):
         self.select_label1 = QtGui.QLabel('    to    ')
         self.start_button = QtGui.QPushButton('Start')
         self.stop_button = QtGui.QPushButton('Stop')
-#         self.start_button.setStyleSheet('QPushButton {border-style: outset}'
-#                                         'QPushButton {border-width: 2px}'
-#                                         'QPushButton {border-radius: 10px}'
-#                                         'QPushButton {border-color: black}'
-#                                         'QPushButton {font: bold 14px}'
-#                                         'QPushButton {min-width: 10em}'
-#                                         'QPushButton {padding: 6px}'
-#                                         'QPushButton:pressed {border-style: inset}')
         self.start_button.setMinimumSize(75, 38)
         self.start_button.setMaximumSize(150,38)
         self.stop_button.setMinimumSize(75, 38)
@@ -99,15 +91,15 @@ class HitCorrelator(Receiver):
         layout.addWidget(reset_button, 0, 1, 0, 1)
         noisy_checkbox = QtGui.QCheckBox('Mask noisy pixels')
         layout.addWidget(noisy_checkbox, 0, 3, 1, 1)
-        transpose_checkbox = QtGui.QCheckBox('Transpose columns and rows (FE-I4)')
-        layout.addWidget(transpose_checkbox, 1, 2, 1, 1)
-        self.convert_checkbox = QtGui.QCheckBox('Axis in um')
+        self.transpose_checkbox = QtGui.QCheckBox('Transpose columns and rows (FE-I4)')
+        layout.addWidget(self.transpose_checkbox, 1, 2, 1, 1)
+        self.convert_checkbox = QtGui.QCheckBox('Axes in ' + u'\u03BC'+'m')
         layout.addWidget(self.convert_checkbox, 0, 2, 1, 1)
         self.rate_label = QtGui.QLabel("Readout Rate: Hz")
         layout.addWidget(self.rate_label, 1, 3, 1, 1)
         dock_status.addWidget(cw)
         reset_button.clicked.connect(lambda: self.send_command('RESET'))
-        transpose_checkbox.stateChanged.connect(lambda value: self.send_command('TRANSPOSE %d' % value))
+        self.transpose_checkbox.stateChanged.connect(lambda value: self.send_command('TRANSPOSE %d' % value))
         noisy_checkbox.stateChanged.connect(lambda value: self.send_command('MASK %d' % value)) #FIXME: Does not do anything now
         #
         #Add plot docks for column corr
@@ -149,70 +141,11 @@ class HitCorrelator(Receiver):
         dock_area.addDock(dock_corr_column, 'bottom')
         dock_area.addDock(dock_corr_row, 'right', dock_corr_column)
         
-        ### function to scale axis in um
-        def scale_axis(state,dut1,dut2):
-            ### function to label axis correctly regarding transposed cols/rows for fe/m26
-            def label_axis(state,dut1,dut2):
-                if state == 0:
-                    if dut1 >= 1 and dut2 == 0:
-                        self.plot1.getAxis('left').setLabel(text='FEI4 Rows')
-                        self.plot1.getAxis('bottom').setLabel(text='M26 Columns')
-                        self.plot2.getAxis('left').setLabel(text='FEI4 Columns')
-                        self.plot2.getAxis('bottom').setLabel(text='M26 Rows')
-                    elif dut1 == 0 and dut2 >= 1:
-                        self.plot1.getAxis('left').setLabel(text='M26 Columns')
-                        self.plot1.getAxis('bottom').setLabel(text='FEI4 Rows')
-                        self.plot2.getAxis('left').setLabel(text='M26 Rows')
-                        self.plot2.getAxis('bottom').setLabel(text='FEI4 Columns')
-                    else:
-                        self.plot1.getAxis('bottom').setLabel(text='Columns')
-                        self.plot1.getAxis('left').setLabel(text='Columns')
-                        self.plot2.getAxis('bottom').setLabel(text='Rows')
-                        self.plot2.getAxis('left').setLabel(text='Rows')
-                elif state == 2:
-                    if dut1 >= 1 and dut2 == 0:
-                        self.plot1.getAxis('left').setLabel(text='FEI4 Rows / um')
-                        self.plot1.getAxis('bottom').setLabel(text='M26 Columns / um')
-                        self.plot2.getAxis('left').setLabel(text='FEI4 Columns / um')
-                        self.plot2.getAxis('bottom').setLabel(text='M26 Rows / um')
-                    elif dut1 == 0 and dut2 >= 1:
-                        self.plot1.getAxis('left').setLabel(text='M26 Columns / um')
-                        self.plot1.getAxis('bottom').setLabel(text='FEI4 Rows / um')
-                        self.plot2.getAxis('left').setLabel(text='M26 Rows / um')
-                        self.plot2.getAxis('bottom').setLabel(text='FEI4 Columns / um')
-                    else:
-                        self.plot1.getAxis('bottom').setLabel(text='Columns / um')
-                        self.plot1.getAxis('left').setLabel(text='Columns / um')
-                        self.plot2.getAxis('bottom').setLabel(text='Rows / um')
-                        self.plot2.getAxis('left').setLabel(text='Rows / um')
-                    
+        ### function to label and scale axis in um
+        def scale_and_label_axes(scale_state,dut1,dut2,dut1_name,dut2_name,transpose_state):
             
-            if state == 2:
-                if dut1 == 0 and dut2 ==0:
-                    self.plot1.getAxis('bottom').setScale(250.0)
-                    self.plot1.getAxis('left').setScale(250.0)
-                    self.plot2.getAxis('bottom').setScale(50.0)
-                    self.plot2.getAxis('left').setScale(50.0)
-                    self.plot1.getAxis('bottom').setTickSpacing(major=2000,minor=500)
-                    self.plot1.getAxis('left').setTickSpacing(major=2000,minor=500)
-                if dut1 >=1 and dut2 >= 1:
-                    self.plot1.getAxis('bottom').setScale(18.4)
-                    self.plot1.getAxis('left').setScale(18.4)
-                    self.plot2.getAxis('bottom').setScale(18.4)
-                    self.plot2.getAxis('left').setScale(18.4)
-                if dut1 >= 1 and dut2 == 0:
-                    self.plot1.getAxis('bottom').setScale(18.4)
-                    self.plot1.getAxis('left').setScale(50.0)
-                    self.plot2.getAxis('bottom').setScale(18.4)
-                    self.plot2.getAxis('left').setScale(250.0)
-                    self.plot2.getAxis('left').setTickSpacing(major=2000,minor=500)
-                if dut1 == 0 and dut2 >= 1:
-                    self.plot1.getAxis('bottom').setScale(50.0)
-                    self.plot1.getAxis('left').setScale(18.4)
-                    self.plot2.getAxis('bottom').setScale(250.0)
-                    self.plot2.getAxis('bottom').setTickSpacing(major=2000,minor=500)
-                    self.plot2.getAxis('left').setScale(18.4)
-            if state == 0:
+            if scale_state == 0:
+                # scaling
                 self.plot1.getAxis('bottom').setScale(1.0)
                 self.plot1.getAxis('left').setScale(1.0)
                 self.plot2.getAxis('bottom').setScale(1.0)
@@ -220,14 +153,111 @@ class HitCorrelator(Receiver):
                 self.plot1.getAxis('bottom').setTickSpacing()
                 self.plot1.getAxis('left').setTickSpacing()
                 self.plot2.getAxis('bottom').setTickSpacing()
-                self.plot2.getAxis('left').setTickSpacing()
-            
-            label_axis(state,dut1,dut2)
-        
-        self.convert_checkbox.stateChanged.connect(lambda value: scale_axis(value,self.combobox1.currentIndex(),self.combobox2.currentIndex()))
-        self.combobox1.activated.connect(lambda value: scale_axis(self.convert_checkbox.checkState(),value,self.combobox2.currentIndex()))
-        self.combobox2.activated.connect(lambda value: scale_axis(self.convert_checkbox.checkState(),self.combobox1.currentIndex(),value))
+                self.plot2.getAxis('left').setTickSpacing() 
+                #labeling
+                if dut1 == 0 and dut2 != 0:
+                    
+                    if transpose_state == 0:
+                        self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Rows')
+                        self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Columns')
+                    elif transpose_state == 2:
+                        self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns')
+                        self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows')
+                        
+                    self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns')
+                    self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows')
+                        
+                elif dut1 != 0 and dut2 == 0:
+                    
+                    if transpose_state == 0:
+                        self.plot1.getAxis('left').setLabel(text=dut2_name + ' Rows')
+                        self.plot2.getAxis('left').setLabel(text=dut2_name + ' Columns')
+                    elif transpose_state == 2:
+                        self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns')
+                        self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows')
+                        
+                    self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns')
+                    self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows')
+                    
+                elif (dut1 != 0 and dut2 != 0) or (dut1 == 0 and dut2 == 0):
+                    
+                    self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns')
+                    self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows')
+                    self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns')
+                    self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows')
+                    
+            elif scale_state == 2:
+                # scaling and labeling
+                if dut1 == 0 and dut2 != 0:
+                    
+                    if transpose_state == 0:
+                        self.plot1.getAxis('bottom').setScale(50.0)
+                        self.plot2.getAxis('bottom').setScale(250.0)
+                        self.plot2.getAxis('bottom').setTickSpacing(major=2000,minor=500)
+                        #label
+                        self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC'+'m')
+                        self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC'+'m')
+                    elif transpose_state == 2:
+                        self.plot1.getAxis('bottom').setScale(250.0)
+                        self.plot2.getAxis('bottom').setScale(50.0)
+                        self.plot1.getAxis('bottom').setTickSpacing(major=2000,minor=500)
+                        #label
+                        self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC'+'m')
+                        self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC'+'m')
+                        
+                    self.plot1.getAxis('left').setScale(18.4)
+                    self.plot2.getAxis('left').setScale(18.4)
+                    #label
+                    self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC'+'m')
+                    self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC'+'m')
+                    
+                elif dut1 != 0 and dut2 == 0:
+                    
+                    if transpose_state == 0:
+                        self.plot1.getAxis('left').setScale(50.0)
+                        self.plot2.getAxis('left').setScale(250.0)
+                        self.plot2.getAxis('left').setTickSpacing(major=2000,minor=500)
+                        #label
+                        self.plot1.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC'+'m')
+                        self.plot2.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC'+'m')
+                    elif transpose_state == 2:
+                        self.plot1.getAxis('left').setScale(50.0)
+                        self.plot2.getAxis('left').setScale(250.0)
+                        self.plot2.getAxis('left').setTickSpacing(major=2000,minor=500)
+                        #label
+                        self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC'+'m')
+                        self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC'+'m')
+                    
+                    self.plot1.getAxis('bottom').setScale(18.4)
+                    self.plot2.getAxis('bottom').setScale(18.4)
+                    #label
+                    self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC'+'m')
+                    self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC'+'m')
+                
+                else:
+                    if dut1 == 0 and dut2 == 0:
+                        self.plot1.getAxis('bottom').setScale(250.0)
+                        self.plot2.getAxis('bottom').setScale(50.0)
+                        self.plot1.getAxis('left').setScale(250.0)
+                        self.plot2.getAxis('left').setScale(50.0)
+                        self.plot1.getAxis('bottom').setTickSpacing(major=2000,minor=500)
+                        self.plot1.getAxis('left').setTickSpacing(major=2000,minor=500)
+                    elif dut1 != 0 and dut2 != 0:
+                        self.plot1.getAxis('bottom').setScale(18.4)
+                        self.plot2.getAxis('bottom').setScale(18.4)
+                        self.plot1.getAxis('left').setScale(18.4)
+                        self.plot2.getAxis('left').setScale(18.4)
+                        
+                    self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC'+'m')
+                    self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC'+'m')
+                    self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC'+'m')
+                    self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC'+'m')
 
+        
+        self.convert_checkbox.stateChanged.connect(lambda value: scale_and_label_axes(value,self.combobox1.currentIndex(),self.combobox2.currentIndex(),self.combobox1.currentText(),self.combobox2.currentText(),self.transpose_checkbox.checkState()))
+        self.combobox1.activated.connect(lambda value: scale_and_label_axes(self.convert_checkbox.checkState(),value,self.combobox2.currentIndex(),self.combobox1.currentText(),self.combobox2.currentText(),self.transpose_checkbox.checkState()))
+        self.combobox2.activated.connect(lambda value: scale_and_label_axes(self.convert_checkbox.checkState(),self.combobox1.currentIndex(),value,self.combobox1.currentText(),self.combobox2.currentText(),self.transpose_checkbox.checkState()))
+        self.transpose_checkbox.stateChanged.connect(lambda value: scale_and_label_axes(self.convert_checkbox.checkState(),self.combobox1.currentIndex(),self.combobox2.currentIndex(),self.combobox1.currentText(),self.combobox2.currentText(),value))
 
     def deserialze_data(self, data):
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)

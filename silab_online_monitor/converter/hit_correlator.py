@@ -241,7 +241,7 @@ class HitCorrelator(Transceiver):
                 self.mask_noisy_pixel = False
             elif self.mask_noisy_checkbox == 2:
                 self.mask_noisy_pixel = True
-            print 'Noisy pixel cut not implemented yet!' # FIXME
+                logging.info('Noisy pixel cut not implemented yet!') # FIXME
         elif 'TRANSPOSE' in command[0]:
             self.transpose_checkbox = int(command[0].split()[1])
             if self.active_dut1 == 0 or self.active_dut2 == 0:
