@@ -173,7 +173,7 @@ class TestCorrelation(unittest.TestCase):
                              (29123, 130515341L, 0x3255, 0x3260, 2, 35435470L, 555, 333L, 52171, 0)],
                              self.m26_dtype)
                     
-        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        fe_index, m26_index = correlation_functions.correlate_fm(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 1)
         self.assertEqual(m26_index, 2)
@@ -191,7 +191,7 @@ class TestCorrelation(unittest.TestCase):
                              (29123, 130515341L, 0x3257, 0x3258, 2, 35435470L, 555, 333L, 52171, 0),
                              (29123, 130515341L, 0x3257, 0x3260, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
                     
-        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        fe_index, m26_index = correlation_functions.correlate_fm(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 4)
         self.assertEqual(m26_index, 0)
@@ -209,7 +209,7 @@ class TestCorrelation(unittest.TestCase):
                              (29123, 130515341L, 0x0001, 0x0002, 2, 35435470L, 555, 333L, 52171, 0),
                              (29123, 130515341L, 0x0002, 0x0004, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
                     
-        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        fe_index, m26_index = correlation_functions.correlate_fm(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 2)
         self.assertEqual(m26_index, 3)
@@ -227,7 +227,7 @@ class TestCorrelation(unittest.TestCase):
                              (29123, 130515341L, 0x0003, 0x0005, 2, 35435470L, 555, 333L, 52171, 0),
                              (29123, 130515341L, 0x0004, 0x0005, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
                     
-        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        fe_index, m26_index = correlation_functions.correlate_fm(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 0)
         self.assertEqual(m26_index, 4)
@@ -245,7 +245,7 @@ class TestCorrelation(unittest.TestCase):
                              (29123, 130515341L, 0x0001, 0x0001, 2, 35435470L, 555, 333L, 52171, 0),
                              (29123, 130515341L, 0x0001, 0x0005, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
                     
-        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        fe_index, m26_index = correlation_functions.correlate_fm(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 3)
         self.assertEqual(m26_index, 3)
@@ -263,7 +263,7 @@ class TestCorrelation(unittest.TestCase):
                              (29123, 130515341L, 0x0001, 0x0001, 2, 35435470L, 555, 333L, 52171, 0),
                              (29123, 130515341L, 0x0002, 0x0005, 2, 35435470L, 555, 333L, 52171, 0)],self.m26_dtype)
                     
-        fe_index, m26_index = correlation_functions.correlate_fm_beta(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
+        fe_index, m26_index = correlation_functions.correlate_fm(fe_data, m26_data, self.corr_col_fm,  self.corr_row_fm, 0,1)
         
         self.assertEqual(fe_index, 4)
         self.assertEqual(m26_index, 3)

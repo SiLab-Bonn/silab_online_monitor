@@ -144,7 +144,7 @@ class HitCorrelator(Transceiver):
                     
         elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
             ### main correlation function
-            fe_index , m26_index = correlation_functions.correlate_fm_beta(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2, self.transpose)
+            fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[0],self.data_buffer[1], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2, self.transpose)
             #print fe_index,m26_index
             if fe_index == -1 and m26_index == -1:
                 logging.error('Outer loop terminated! Mimosa index equal or greater then length of data array!')
@@ -156,7 +156,7 @@ class HitCorrelator(Transceiver):
             
         elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
             ### main correlation function
-            fe_index , m26_index = correlation_functions.correlate_fm_beta(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2, self.transpose)
+            fe_index , m26_index = correlation_functions.correlate_fm(self.data_buffer[1],self.data_buffer[0], self.hist_cols_corr ,self.hist_rows_corr,self.active_dut1,self.active_dut2, self.transpose)
             #print fe_index, m26_index
             if fe_index == -1 and m26_index == -1:
                 logging.error('Outer loop terminated! Mimosa index equal or greater then length of data array!')
