@@ -127,7 +127,7 @@ class HitCorrelator(Receiver):
         view2 = occupancy_graphics2.addViewBox()
         occupancy_img_rows = pg.ImageItem(border='w')
         #color occupancy
-        occupancy_img_rows.setLookupTable(lutt)
+        occupancy_img_rows.setLookupTable(lutt, update=True)
         #make plotwidget with axis
         self.plot2 =pg.PlotWidget(viewBox=view2)#, labels={'left': 'Row','bottom':'Row'})
         self.plot2.getAxis('bottom').setLabel(text='Rows')
