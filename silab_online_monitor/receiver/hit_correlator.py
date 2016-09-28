@@ -30,7 +30,7 @@ class HitCorrelator(Receiver):
         for dut_index in range(7):
             
             if dut_index == 0:
-                DUTS.append('FEI4')
+                DUTS.append('FE-I4')
             else:
                 DUTS.append('MIMOSA %i' % dut_index)
         #        
@@ -89,18 +89,25 @@ class HitCorrelator(Receiver):
         reset_button.setMaximumSize(300,30)
         layout.setHorizontalSpacing(25)
         layout.addWidget(reset_button, 0, 1, 0, 1)
-        noisy_checkbox = QtGui.QCheckBox('Mask noisy pixels')
-        layout.addWidget(noisy_checkbox, 0, 3, 1, 1)
+        remove_background_checkbox = QtGui.QCheckBox('Remove background:')
+        layout.addWidget(remove_background_checkbox, 0, 2, 1, 1)
+        remove_background_spinbox = QtGui.QSpinBox()
+        remove_background_spinbox.setRange(0,100)
+        remove_background_spinbox.setValue(99)
+        remove_background_spinbox.setPrefix('< ')
+        remove_background_spinbox.setSuffix(' % maximum occupancy')
+        layout.addWidget(remove_background_spinbox, 0, 3, 1, 1)
         self.transpose_checkbox = QtGui.QCheckBox('Transpose columns and rows (FE-I4)')
-        layout.addWidget(self.transpose_checkbox, 1, 2, 1, 1)
+        layout.addWidget(self.transpose_checkbox, 1, 3, 1, 1)
         self.convert_checkbox = QtGui.QCheckBox('Axes in ' + u'\u03BC'+'m')
-        layout.addWidget(self.convert_checkbox, 0, 2, 1, 1)
+        layout.addWidget(self.convert_checkbox, 1, 2, 1, 1)
         self.rate_label = QtGui.QLabel("Readout Rate: Hz")
-        layout.addWidget(self.rate_label, 1, 3, 1, 1)
+        layout.addWidget(self.rate_label, 0, 4, 1, 1)
         dock_status.addWidget(cw)
         reset_button.clicked.connect(lambda: self.send_command('RESET'))
         self.transpose_checkbox.stateChanged.connect(lambda value: self.send_command('TRANSPOSE %d' % value))
-        noisy_checkbox.stateChanged.connect(lambda value: self.send_command('MASK %d' % value)) #FIXME: Does not do anything now
+        remove_background_checkbox.stateChanged.connect(lambda value: self.send_command('BACKGROUND %d' % value))
+        remove_background_spinbox.valueChanged.connect(lambda value: self.send_command('PERCENTAGE %d' % value))
         #
         #Add plot docks for column corr
         occupancy_graphics1 = pg.GraphicsLayoutWidget()

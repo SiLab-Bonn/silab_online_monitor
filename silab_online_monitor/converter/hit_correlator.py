@@ -30,9 +30,10 @@ class HitCorrelator(Transceiver):
         ### variables fps
         self.fps = 0
         self.updateTime = 0
-        ### mask noisy pixels
-        self.mask_noisy_pixel = False
-        self.mask_noisy_checkbox = 0
+        ### remove noisy background
+        self.remove_background = False
+        self.remove_background_checkbox = 0
+        self.remove_background_percentage = 99
         ### transpose cols and rows due to fei4 rotation
         self.transpose = True # this is true for our setup
         self.transpose_checkbox = 0
@@ -119,7 +120,12 @@ class HitCorrelator(Transceiver):
 #         memoryy = psutil.virtual_memory()
 #         self.avg_ram += (memoryy.total-memoryy.available)/1024.0**2 #(memory.total - memory.available) - (memory.buffers + memory.cached) #according to htop
 #         self.n += 1.0
-        
+
+        ###define function to remove background from correlation plots
+        def remove_background(cols_corr,rows_corr,percentage):
+            cols_corr[cols_corr < np.percentile(cols_corr, percentage)] = 0
+            rows_corr[rows_corr < np.percentile(rows_corr, percentage)] = 0
+            
         ### make correlation
         if self.active_dut1 != 0 and self.active_dut2 != 0: #correlate m26 to m26
             
@@ -131,7 +137,11 @@ class HitCorrelator(Transceiver):
                 return
             
             self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,m0_index)) # delete the already correlated data
-            self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,m1_index)) # delete the already correlated data
+            self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,m1_index)) # delete the already correlated data            
+            
+            if self.remove_background:
+                remove_background(self.hist_cols_corr, self.hist_rows_corr, self.remove_background_percentage)
+            
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                 
         elif self.active_dut1 == 0 and self.active_dut2 == 0: #correlate fe to fe, fei4 correlation with itself will be shown, instead of nothing
@@ -140,6 +150,10 @@ class HitCorrelator(Transceiver):
             
             self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,f0_index))
             self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,f0_index))
+            
+            if self.remove_background:
+                remove_background(self.hist_cols_corr, self.hist_rows_corr, self.remove_background_percentage)
+            
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
                     
         elif self.active_dut1 == 0 and self.active_dut2 != 0: #correlate fei4 to m26
@@ -152,6 +166,10 @@ class HitCorrelator(Transceiver):
             
             self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,fe_index))
             self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,m26_index))
+            
+            if self.remove_background:
+                remove_background(self.hist_cols_corr, self.hist_rows_corr, self.remove_background_percentage)
+            
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
             
         elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
@@ -164,6 +182,10 @@ class HitCorrelator(Transceiver):
             
             self.data_buffer[0] = np.delete(self.data_buffer[0], np.arange(0,m26_index))
             self.data_buffer[1] = np.delete(self.data_buffer[1], np.arange(0,fe_index))
+            
+            if self.remove_background:
+                remove_background(self.hist_cols_corr, self.hist_rows_corr, self.remove_background_percentage)
+            
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
         
         else:
@@ -235,13 +257,15 @@ class HitCorrelator(Transceiver):
 #             print "AVERAGE PROCESS CPU ==", self.prs_avg_cpu / self.n
 #             print "AVERAGE RAM ==", self.avg_ram / self.n
             reset()
-        elif 'MASK' in command[0]: # FIXME
-            self.mask_noisy_checkbox = int(command[0].split()[1])
-            if self.mask_noisy_checkbox == 0:
-                self.mask_noisy_pixel = False
-            elif self.mask_noisy_checkbox == 2:
-                self.mask_noisy_pixel = True
-                logging.info('Noisy pixel cut not implemented yet!') # FIXME
+        elif 'BACKGROUND' in command[0]:
+            self.remove_background_checkbox = int(command[0].split()[1])
+            if self.remove_background_checkbox == 0:
+                self.remove_background = False
+            elif self.remove_background_checkbox == 2:
+                self.remove_background = True
+                #logging.info('Noisy pixel cut not implemented yet!') # FIXME
+        elif 'PERCENTAGE' in command[0]:
+            self.remove_background_percentage = int(command[0].split()[1])
         elif 'TRANSPOSE' in command[0]:
             self.transpose_checkbox = int(command[0].split()[1])
             if self.active_dut1 == 0 or self.active_dut2 == 0:
