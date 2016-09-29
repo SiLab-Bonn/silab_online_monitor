@@ -261,11 +261,13 @@ class HitCorrelator(Transceiver):
             self.remove_background_checkbox = int(command[0].split()[1])
             if self.remove_background_checkbox == 0:
                 self.remove_background = False
+                reset()
             elif self.remove_background_checkbox == 2:
                 self.remove_background = True
-                #logging.info('Noisy pixel cut not implemented yet!') # FIXME
         elif 'PERCENTAGE' in command[0]:
             self.remove_background_percentage = int(command[0].split()[1])
+            if self.remove_background:
+                reset()
         elif 'TRANSPOSE' in command[0]:
             self.transpose_checkbox = int(command[0].split()[1])
             if self.active_dut1 == 0 or self.active_dut2 == 0:
