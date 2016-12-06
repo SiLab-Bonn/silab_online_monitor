@@ -3,7 +3,7 @@ from zmq.utils import jsonapi
 import numpy as np
 import time
 
-from PyQt4 import Qt
+from PyQt5 import Qt
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.ptime as ptime
@@ -24,7 +24,14 @@ class PybarMimosa26(Receiver):
         #parent.setTabsClosable(True)
         # Occupancy Docks
         self.occupancy_images = []
-
+        # Plots with axis stored in here
+        self.plots = []
+        #color occupancy plot
+        poss = np.array([0.0, 0.6, 1.0])
+        color = np.array([[25,25,112,255],[173,255,47,255],[255,0,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
+        mapp = pg.ColorMap(poss, color)
+        lutt = mapp.getLookupTable(0.0, 1.0, 100)
+        #
         for plane in range(3):  # Loop over 3 * 2 plot widgets
             # Dock left
             dock_occcupancy = Dock("Occupancy plane %d" % (2 * plane +1), size=(100, 200))
@@ -34,8 +41,12 @@ class PybarMimosa26(Receiver):
             view = occupancy_graphics.addViewBox()
             self.occupancy_images.append(pg.ImageItem(border='w'))
             view.addItem(self.occupancy_images[2 * plane])
-            #vew.setRange(QtCore.QRectF(0, 0, 80, 336))
-            dock_occcupancy.addWidget(occupancy_graphics)
+            self.occupancy_images[2*plane].setLookupTable(lutt, update=True)
+            #make plot with axes
+            self.plots.append(pg.PlotWidget(viewBox=view,labels={'bottom':'Column','left':'Row'}))
+            self.plots[2*plane].addItem(self.occupancy_images[2*plane])
+            dock_occcupancy.addWidget(self.plots[2*plane])
+            
 
             # Dock right
             dock_occcupancy_2 = Dock("Occupancy plane %d" % (2 * plane + 2), size=(100, 200))
@@ -45,8 +56,12 @@ class PybarMimosa26(Receiver):
             view = occupancy_graphics.addViewBox()
             self.occupancy_images.append(pg.ImageItem(border='w'))
             view.addItem(self.occupancy_images[2 * plane + 1])
-            #view.setRange(QtCore.QRectF(0, 0, 80, 336))
-            dock_occcupancy_2.addWidget(occupancy_graphics)
+            self.occupancy_images[2*plane+1].setLookupTable(lutt, update=True)
+            #make plot with axes
+            self.plots.append(pg.PlotWidget(viewBox=view,labels={'bottom':'Column','left':'Row'}))
+            self.plots[2*plane+1].addItem(self.occupancy_images[2*plane+1])
+            dock_occcupancy_2.addWidget(self.plots[2*plane+1])
+            
 
         # dock_event_status = Dock("Event status", size=(400, 400))
         # dock_trigger_status = Dock("Trigger status", size=(400, 400))
@@ -72,6 +87,7 @@ class PybarMimosa26(Receiver):
         self.spin_box.setSuffix(" Readouts")
         self.reset_button = QtGui.QPushButton('Reset')
         self.noisy_checkbox = QtGui.QCheckBox('Mask noisy pixels')
+        self.convert_checkbox = QtGui.QCheckBox('Axes in ' + u'\u03BC'+'m')
         layout.addWidget(self.timestamp_label, 0, 0, 0, 1)
         layout.addWidget(self.plot_delay_label, 0, 1, 0, 1)
         layout.addWidget(self.rate_label, 0, 2, 0, 1)
@@ -80,13 +96,31 @@ class PybarMimosa26(Receiver):
         layout.addWidget(self.scan_parameter_label, 0, 5, 0, 1)
         layout.addWidget(self.spin_box, 0, 6, 0, 1)
         layout.addWidget(self.noisy_checkbox, 0, 7, 0, 1)
-        layout.addWidget(self.reset_button, 0, 8, 0, 1)
+        layout.addWidget(self.convert_checkbox, 0, 8, 0, 1)
+        layout.addWidget(self.reset_button, 0, 9, 0, 1)
         dock_status.addWidget(cw)
 
         # Connect widgets
         self.reset_button.clicked.connect(lambda: self.send_command('RESET'))
         self.spin_box.valueChanged.connect(lambda value: self.send_command(str(value)))
         self.noisy_checkbox.stateChanged.connect(lambda value: self.send_command('MASK %d' % value))
+        
+        #Change axis scaling
+        def scale_axes(scale_state):
+            if scale_state == 0:
+                for plot in self.plots:
+                    plot.getAxis('bottom').setScale(1.0)
+                    plot.getAxis('left').setScale(1.0)
+                    plot.getAxis('bottom').setLabel('Columns')
+                    plot.getAxis('left').setLabel('Rows')
+            elif scale_state == 2:
+                for plot in self.plots:
+                    plot.getAxis('bottom').setScale(18.4)
+                    plot.getAxis('left').setScale(18.4)
+                    plot.getAxis('bottom').setLabel('Columns / ' + u'\u03BC'+'m')
+                    plot.getAxis('left').setLabel('Rows / ' + u'\u03BC'+'m')
+                
+        self.convert_checkbox.stateChanged.connect(lambda value: scale_axes(value))
 
 #         event_status_widget = pg.PlotWidget()
 #         self.event_status_plot = event_status_widget.plot(np.linspace(-0.5, 15.5, 17), np.zeros((16)), stepMode=True)

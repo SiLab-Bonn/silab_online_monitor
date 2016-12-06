@@ -2,9 +2,9 @@ producer_sim :
     DAQ0 :
         kind : pybar_fei4
 #        delay : 0.02814
-        delay : 0.03
+        delay : 0.02
         backend: tcp://127.0.0.1:5500
-        data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/91_test_m26_telescope_scan.h5
+        data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/122_test_m26_telescope_scan.h5
 #        data_file: /home/silab/Documents/testbeam/data_elsa_160307/mimosa/30_mmc32_telescope_5.h5
 
 converter :

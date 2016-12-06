@@ -3,7 +3,7 @@ from zmq.utils import jsonapi
 import numpy as np
 import time
 
-from PyQt4 import Qt
+from PyQt5 import Qt
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.ptime as ptime
@@ -79,12 +79,19 @@ class PybarFEI4(Receiver):
         # Global config dock
         self.global_conf_list_widget = Qt.QListWidget()
         dock_global_config.addWidget(self.global_conf_list_widget)
-
+        
+        #color occupancy
+        poss = np.array([0.0, 0.6, 1.0])
+        color = np.array([[25,25,112,255],[173,255,47,255],[255,0,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
+        mapp = pg.ColorMap(poss, color)
+        lutt = mapp.getLookupTable(0.0, 1.0, 100)
+        
         # Different plot docks
         occupancy_graphics = pg.GraphicsLayoutWidget()
         occupancy_graphics.show()
         view = occupancy_graphics.addViewBox()
         self.occupancy_img = pg.ImageItem(border='w')
+        self.occupancy_img.setLookupTable(lutt, update=True)
         #view.addItem(self.occupancy_img)
         plot = pg.PlotWidget(viewBox=view,labels={'bottom':'Column','left':'Row'})
         plot.addItem(self.occupancy_img)

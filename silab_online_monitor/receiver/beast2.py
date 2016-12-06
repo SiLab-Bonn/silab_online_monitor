@@ -2,7 +2,7 @@ from online_monitor.receiver.receiver import Receiver
 from zmq.utils import jsonapi
 import numpy as np
 import time
-from PyQt4 import Qt
+from PyQt5 import Qt
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.ptime as ptime

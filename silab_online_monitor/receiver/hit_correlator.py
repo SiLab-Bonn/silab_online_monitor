@@ -3,7 +3,7 @@ from zmq.utils import jsonapi
 import numpy as np
 import time
 
-from PyQt4 import Qt
+from PyQt5 import Qt
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.ptime as ptime
@@ -12,7 +12,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 
 
 from online_monitor.utils import utils
-from PyQt4.Qt import QWidget, QSize
+from PyQt5.Qt import QWidget, QSize
 
 
 class HitCorrelator(Receiver):
@@ -91,9 +91,11 @@ class HitCorrelator(Receiver):
         layout.addWidget(reset_button, 0, 1, 0, 1)
         remove_background_checkbox = QtGui.QCheckBox('Remove background:')
         layout.addWidget(remove_background_checkbox, 0, 2, 1, 1)
-        remove_background_spinbox = QtGui.QSpinBox()
-        remove_background_spinbox.setRange(0,100)
-        remove_background_spinbox.setValue(99)
+        remove_background_spinbox = QtGui.QDoubleSpinBox()
+        remove_background_spinbox.setRange(0.0,100.0)
+        remove_background_spinbox.setValue(99.0)
+        remove_background_spinbox.setSingleStep(1.0)
+        remove_background_spinbox.setDecimals(1)
         remove_background_spinbox.setPrefix('< ')
         remove_background_spinbox.setSuffix(' % maximum occupancy')
         layout.addWidget(remove_background_spinbox, 0, 3, 1, 1)
@@ -107,7 +109,7 @@ class HitCorrelator(Receiver):
         reset_button.clicked.connect(lambda: self.send_command('RESET'))
         self.transpose_checkbox.stateChanged.connect(lambda value: self.send_command('TRANSPOSE %d' % value))
         remove_background_checkbox.stateChanged.connect(lambda value: self.send_command('BACKGROUND %d' % value))
-        remove_background_spinbox.valueChanged.connect(lambda value: self.send_command('PERCENTAGE %d' % value))
+        remove_background_spinbox.valueChanged.connect(lambda value: self.send_command('PERCENTAGE %f' % value))
         #
         #Add plot docks for column corr
         occupancy_graphics1 = pg.GraphicsLayoutWidget()

@@ -13,7 +13,7 @@ class pyBarFEI4Sim(ProducerSim):
     
     def setup_producer_device(self):
         ProducerSim.setup_producer_device(self)
-        self.in_file_h5 = tb.openFile(self.config['data_file'], mode="r")
+        self.in_file_h5 = tb.open_file(self.config['data_file'], mode="r")
         self.meta_data = self.in_file_h5.root.meta_data[:]
         self.raw_data = self.in_file_h5.root.raw_data
         self.n_readouts = self.meta_data.shape[0]

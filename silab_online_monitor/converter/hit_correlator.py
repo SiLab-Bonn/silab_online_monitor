@@ -33,7 +33,7 @@ class HitCorrelator(Transceiver):
         ### remove noisy background
         self.remove_background = False
         self.remove_background_checkbox = 0
-        self.remove_background_percentage = 99
+        self.remove_background_percentage = 99.0
         ### transpose cols and rows due to fei4 rotation
         self.transpose = True # this is true for our setup
         self.transpose_checkbox = 0
@@ -169,7 +169,7 @@ class HitCorrelator(Transceiver):
             
             if self.remove_background:
                 remove_background(self.hist_cols_corr, self.hist_rows_corr, self.remove_background_percentage)
-            
+                
             return [{'column' : self.hist_cols_corr, 'row' : self.hist_rows_corr}]
             
         elif self.active_dut1 != 0 and self.active_dut2 == 0: #correlate m26 to fei4
@@ -265,7 +265,7 @@ class HitCorrelator(Transceiver):
             elif self.remove_background_checkbox == 2:
                 self.remove_background = True
         elif 'PERCENTAGE' in command[0]:
-            self.remove_background_percentage = int(command[0].split()[1])
+            self.remove_background_percentage = float(command[0].split()[1])
             if self.remove_background:
                 reset()
         elif 'TRANSPOSE' in command[0]:
