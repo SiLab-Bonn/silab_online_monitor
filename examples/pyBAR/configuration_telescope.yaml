@@ -1,11 +1,10 @@
 producer_sim :
     DAQ0 :
         kind : pybar_fei4
-#        delay : 0.02814
-        delay : 0.02
+        delay : 0.03
         backend: tcp://127.0.0.1:5500
+#       path to your h5-file
         data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/122_test_m26_telescope_scan.h5
-#        data_file: /home/silab/Documents/testbeam/data_elsa_160307/mimosa/30_mmc32_telescope_5.h5
 
 converter :
     DUT0_Interpreter :
@@ -16,7 +15,6 @@ converter :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:5500
         backend : tcp://127.0.0.1:6600
-    
     HIT_Correlator : 
         kind : hit_correlator
         frontend : 
@@ -37,6 +35,10 @@ converter :
         kind : pybar_fei4_histogrammer
         frontend : tcp://127.0.0.1:6600
         backend : tcp://127.0.0.1:6700
+#    Telescope_Status :
+#        kind : telescope_status
+#        frontend : tcp://127.0.0.1:5500
+#        backend : tcp://127.0.0.1:8700
 
 receiver :
     DUT0 :
@@ -54,5 +56,9 @@ receiver :
         max_n_rows_fei4 : 337 
         max_n_columns_fei4 : 81
         max_n_rows_m26 : 576 
-        max_n_columns_m26 : 1152    
+        max_n_columns_m26 : 1152
+    Telescope_Status :
+        kind : telescope_status
+        frontend : tcp://127.0.0.1:8700
+    
     

@@ -107,14 +107,13 @@ class PybarMimosa26(Receiver):
         
         #Change axis scaling
         def scale_axes(scale_state):
-            if scale_state == 0:
-                for plot in self.plots:
+            for plot in self.plots:
+                if scale_state == 0:
                     plot.getAxis('bottom').setScale(1.0)
                     plot.getAxis('left').setScale(1.0)
                     plot.getAxis('bottom').setLabel('Columns')
                     plot.getAxis('left').setLabel('Rows')
-            elif scale_state == 2:
-                for plot in self.plots:
+                elif scale_state == 2:
                     plot.getAxis('bottom').setScale(18.4)
                     plot.getAxis('left').setScale(18.4)
                     plot.getAxis('bottom').setLabel('Columns / ' + u'\u03BC'+'m')

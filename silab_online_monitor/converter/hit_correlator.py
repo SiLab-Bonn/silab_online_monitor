@@ -6,12 +6,6 @@ import logging
 import gc
 from online_monitor.converter.transceiver import Transceiver
 from online_monitor.utils import utils
-from numba import njit
-
-#from testbeam_analysis.tools import analysis_utils
-
-#from pyBAR_mimosa26_interpreter import correlation_functions
-
 from silab_online_monitor.converter import correlation_functions
 
 class HitCorrelator(Transceiver):
