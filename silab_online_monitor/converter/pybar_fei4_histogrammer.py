@@ -38,35 +38,37 @@ class PybarFEI4Histogrammer(Transceiver):
         self.error_counters = None
         self.service_records_counters = None
         self.trigger_error_counters = None
-        
-        
+
     def deserialze_data(self, data):
-        #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
-        
-        datar, meta  = utils.simple_dec(data)
+        # return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+
+        datar, meta = utils.simple_dec(data)
         if 'hits' in meta:
             meta['hits'] = datar
         return meta
-        
 
     def interpret_data(self, data):
-        
+
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
-            now = float(meta_data['timestamp_stop'])
-            recent_total_hits = meta_data['n_hits']
-            recent_total_events = meta_data['n_events']
-            recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
-            recent_hps = (recent_total_hits - self.total_hits) / (now - self.updateTime)
-            recent_eps = (recent_total_events - self.total_events) / (now - self.updateTime)
-            self.updateTime = now
-            self.total_hits = recent_total_hits
-            self.total_events = recent_total_events
-            self.fps = self.fps * 0.7 + recent_fps * 0.3
-            self.hps = self.hps + (recent_hps - self.hps) * 0.3 / self.fps
-            self.eps = self.eps + (recent_eps - self.eps) * 0.3 / self.fps
-            meta_data.update({'fps': self.fps, 'hps': self.hps, 'total_hits': self.total_hits, 'eps': self.eps, 'total_events': self.total_events})
-            return [data[0][1]]
+            try:
+                now = float(meta_data['timestamp_stop'])
+                recent_total_hits = meta_data['n_hits']
+                recent_total_events = meta_data['n_events']
+                recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
+                recent_hps = (recent_total_hits - self.total_hits) / (now - self.updateTime)
+                recent_eps = (recent_total_events - self.total_events) / (now - self.updateTime)
+                self.updateTime = now
+                self.total_hits = recent_total_hits
+                self.total_events = recent_total_events
+                self.fps = self.fps * 0.7 + recent_fps * 0.3
+                self.hps = self.hps + (recent_hps - self.hps) * 0.3 / self.fps
+                self.eps = self.eps + (recent_eps - self.eps) * 0.3 / self.fps
+                meta_data.update({'fps': self.fps, 'hps': self.hps, 'total_hits': self.total_hits, 'eps': self.eps, 'total_events': self.total_events})
+                return [data[0][1]]
+            except KeyError:
+                import logging
+                logging.fatal('META DATA WEIRD %s', str(meta_data))
 
         self.readout += 1
 
@@ -114,15 +116,15 @@ class PybarFEI4Histogrammer(Transceiver):
         return [histogrammed_data]
 
     def serialze_data(self, data):
-        #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
-        
+        # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+
         if 'occupancies' in data:
-            hits_data  = data['occupancies']
+            hits_data = data['occupancies']
             data['occupancies'] = None
             return utils.simple_enc(hits_data, data)
         else:
             return utils.simple_enc(None, data)
-            
+
     def handle_command(self, command):
         if command[0] == 'RESET':
             self.histograming.reset()
