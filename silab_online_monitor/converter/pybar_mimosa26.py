@@ -10,7 +10,6 @@ from online_monitor.utils import utils
 
 class PybarMimosa26(Transceiver):
 
-
     def setup_interpretation(self):
         self.interpreter = RawDataInterpreter()
         self.n_hits = 0
@@ -51,14 +50,11 @@ class PybarMimosa26(Transceiver):
         return [interpreted_data]
 
     def serialze_data(self, data):
-        #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
-        
+        # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+
         if 'hits' in data:
-            hits_data  = data['hits']
+            hits_data = data['hits']
             data['hits'] = None
             return utils.simple_enc(hits_data, data)
         else:
             return utils.simple_enc(None, data)
-            
-            
-        

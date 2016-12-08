@@ -21,47 +21,45 @@ class PybarMimosa26(Receiver):
     def setup_widgets(self, parent, name):
         dock_area = DockArea()
         parent.addTab(dock_area, name)
-        #parent.setTabsClosable(True)
+        # parent.setTabsClosable(True)
         # Occupancy Docks
         self.occupancy_images = []
         # Plots with axis stored in here
         self.plots = []
-        #color occupancy plot
+        # color occupancy plot
         poss = np.array([0.0, 0.6, 1.0])
-        color = np.array([[25,25,112,255],[173,255,47,255],[255,0,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
+        color = np.array([[25, 25, 112, 255], [173, 255, 47, 255], [255, 0, 0, 255]], dtype=np.ubyte)  # [RED,GREEN,BLUE,BLACK/WHITE]
         mapp = pg.ColorMap(poss, color)
         lutt = mapp.getLookupTable(0.0, 1.0, 100)
         #
         for plane in range(3):  # Loop over 3 * 2 plot widgets
             # Dock left
-            dock_occcupancy = Dock("Occupancy plane %d" % (2 * plane +1), size=(100, 200))
+            dock_occcupancy = Dock("Occupancy plane %d" % (2 * plane + 1), size=(100, 200))
             dock_area.addDock(dock_occcupancy)
             occupancy_graphics = pg.GraphicsLayoutWidget()  # Plot docks
             occupancy_graphics.show()
             view = occupancy_graphics.addViewBox()
             self.occupancy_images.append(pg.ImageItem(border='w'))
             view.addItem(self.occupancy_images[2 * plane])
-            self.occupancy_images[2*plane].setLookupTable(lutt, update=True)
-            #make plot with axes
-            self.plots.append(pg.PlotWidget(viewBox=view,labels={'bottom':'Column','left':'Row'}))
-            self.plots[2*plane].addItem(self.occupancy_images[2*plane])
-            dock_occcupancy.addWidget(self.plots[2*plane])
-            
+            self.occupancy_images[2 * plane].setLookupTable(lutt, update=True)
+            # make plot with axes
+            self.plots.append(pg.PlotWidget(viewBox=view, labels={'bottom': 'Column', 'left': 'Row'}))
+            self.plots[2 * plane].addItem(self.occupancy_images[2 * plane])
+            dock_occcupancy.addWidget(self.plots[2 * plane])
 
             # Dock right
             dock_occcupancy_2 = Dock("Occupancy plane %d" % (2 * plane + 2), size=(100, 200))
-            dock_area.addDock(dock_occcupancy_2, 'right', dock_occcupancy)  
+            dock_area.addDock(dock_occcupancy_2, 'right', dock_occcupancy)
             occupancy_graphics = pg.GraphicsLayoutWidget()  # Plot docks
             occupancy_graphics.show()
             view = occupancy_graphics.addViewBox()
             self.occupancy_images.append(pg.ImageItem(border='w'))
             view.addItem(self.occupancy_images[2 * plane + 1])
-            self.occupancy_images[2*plane+1].setLookupTable(lutt, update=True)
-            #make plot with axes
-            self.plots.append(pg.PlotWidget(viewBox=view,labels={'bottom':'Column','left':'Row'}))
-            self.plots[2*plane+1].addItem(self.occupancy_images[2*plane+1])
-            dock_occcupancy_2.addWidget(self.plots[2*plane+1])
-            
+            self.occupancy_images[2 * plane + 1].setLookupTable(lutt, update=True)
+            # make plot with axes
+            self.plots.append(pg.PlotWidget(viewBox=view, labels={'bottom': 'Column', 'left': 'Row'}))
+            self.plots[2 * plane + 1].addItem(self.occupancy_images[2 * plane + 1])
+            dock_occcupancy_2.addWidget(self.plots[2 * plane + 1])
 
         # dock_event_status = Dock("Event status", size=(400, 400))
         # dock_trigger_status = Dock("Trigger status", size=(400, 400))
@@ -87,7 +85,7 @@ class PybarMimosa26(Receiver):
         self.spin_box.setSuffix(" Readouts")
         self.reset_button = QtGui.QPushButton('Reset')
         self.noisy_checkbox = QtGui.QCheckBox('Mask noisy pixels')
-        self.convert_checkbox = QtGui.QCheckBox('Axes in ' + u'\u03BC'+'m')
+        self.convert_checkbox = QtGui.QCheckBox('Axes in ' + u'\u03BC' + 'm')
         layout.addWidget(self.timestamp_label, 0, 0, 0, 1)
         layout.addWidget(self.plot_delay_label, 0, 1, 0, 1)
         layout.addWidget(self.rate_label, 0, 2, 0, 1)
@@ -104,8 +102,8 @@ class PybarMimosa26(Receiver):
         self.reset_button.clicked.connect(lambda: self.send_command('RESET'))
         self.spin_box.valueChanged.connect(lambda value: self.send_command(str(value)))
         self.noisy_checkbox.stateChanged.connect(lambda value: self.send_command('MASK %d' % value))
-        
-        #Change axis scaling
+
+        # Change axis scaling
         def scale_axes(scale_state):
             for plot in self.plots:
                 if scale_state == 0:
@@ -116,9 +114,9 @@ class PybarMimosa26(Receiver):
                 elif scale_state == 2:
                     plot.getAxis('bottom').setScale(18.4)
                     plot.getAxis('left').setScale(18.4)
-                    plot.getAxis('bottom').setLabel('Columns / ' + u'\u03BC'+'m')
-                    plot.getAxis('left').setLabel('Rows / ' + u'\u03BC'+'m')
-                
+                    plot.getAxis('bottom').setLabel('Columns / ' + u'\u03BC' + 'm')
+                    plot.getAxis('left').setLabel('Rows / ' + u'\u03BC' + 'm')
+
         self.convert_checkbox.stateChanged.connect(lambda value: scale_axes(value))
 
 #         event_status_widget = pg.PlotWidget()
@@ -135,12 +133,12 @@ class PybarMimosa26(Receiver):
 
     def deserialze_data(self, data):
 
-        datar, meta  = utils.simple_dec(data)
+        datar, meta = utils.simple_dec(data)
         if 'occupancies' in meta:
             meta['occupancies'] = datar
         return meta
-        
-        #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+
+        # return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def handle_data(self, data):
         def update_rate(fps, hps, recent_total_hits, eps, recent_total_events):

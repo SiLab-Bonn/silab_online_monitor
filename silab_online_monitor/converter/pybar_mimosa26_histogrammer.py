@@ -12,8 +12,8 @@ from online_monitor.utils import utils
 def fill_occupanc_hist(hist, hits):  # Histogram the pixel hits per plane; JIT is faster then cythonized hist2d applied for each plane, since less looping is involved
     for hit_index in range(hits.shape[0]):
         if hits[hit_index]['plane'] != 0:
-            hist[hits[hit_index]['plane']-1][hits[hit_index]['column'], hits[hit_index]['row']] += 1
-        ##if hits[hit_index]['plane']==0 do nothing. becuase plane=0 is TLU debug data
+            hist[hits[hit_index]['plane'] - 1][hits[hit_index]['column'], hits[hit_index]['row']] += 1
+        # if hits[hit_index]['plane']==0 do nothing. becuase plane=0 is TLU debug data
 
 
 def apply_noisy_pixel_cut(hists, noisy_threshold):
@@ -44,14 +44,14 @@ class PybarMimosa26Histogrammer(Transceiver):
 #         self.trigger_error_counters = None
 
     def deserialze_data(self, data):
-        #return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
-        datar, meta  = utils.simple_dec(data)
+        # return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
+        datar, meta = utils.simple_dec(data)
         if 'hits' in meta:
             meta['hits'] = datar
         return meta
 
     def interpret_data(self, data):
-        
+
         if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
             meta_data = data[0][1]['meta_data']
             now = float(meta_data['timestamp_stop'])
@@ -88,33 +88,32 @@ class PybarMimosa26Histogrammer(Transceiver):
             for occupancy_array in self.occupancy_arrays:
                 occupancy_array[occupancy_array > np.percentile(self.occupancy_arrays, 100 - self.config['noisy_threshold'])] = 0
 
-#         # Sum up interpreter histograms
+# Sum up interpreter histograms
 #         if self.error_counters is not None:
 #             self.error_counters += interpreted_data['error_counters']
 #         else:
-#             self.error_counters = interpreted_data['error_counters'].copy()  # Copy needed to give ownage to histogrammer
+# self.error_counters = interpreted_data['error_counters'].copy()  # Copy needed to give ownage to histogrammer
 #         if self.trigger_error_counters is not None:
 #             self.trigger_error_counters += interpreted_data['trigger_error_counters']
 #         else:
-#             self.trigger_error_counters = interpreted_data['trigger_error_counters'].copy()  # Copy needed to give ownage to histogrammer
+# self.trigger_error_counters = interpreted_data['trigger_error_counters'].copy()  # Copy needed to give ownage to histogrammer
 
-        histogrammed_data = { 
+        histogrammed_data = {
             'occupancies': self.occupancy_arrays
         }
 
         return [histogrammed_data]
 
     def serialze_data(self, data):
-        #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+        # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 
         if 'occupancies' in data:
-            hits_data  = data['occupancies']
+            hits_data = data['occupancies']
             data['occupancies'] = None
             return utils.simple_enc(hits_data, data)
         else:
             return utils.simple_enc(None, data)
-            
-        
+
     def handle_command(self, command):
         if command[0] == 'RESET':
             self.occupancy_arrays = np.zeros(shape=(6, 1152, 576), dtype=np.int32)  # Reset occ hists

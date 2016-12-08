@@ -12,19 +12,20 @@ from pyqtgraph.dockarea import DockArea, Dock
 from online_monitor.utils import utils
 from PyQt5.Qt import QWidget, QSize
 
+
 class TelescopeStatus(Receiver):
-    
+
     def setup_receiver(self):
         self.set_bidirectional_communication()  # We want to change converter settings
-    
+
     def setup_widgets(self, parent, name):
         #
         dock_area = DockArea()
         parent.addTab(dock_area, name)
-        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %s' % str(parent.tabText(value)))) # send active tab index to converter so that it only does something when user is looking at corresponding receiver
+        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %s' % str(parent.tabText(value))))  # send active tab index to converter so that it only does something when user is looking at corresponding receiver
         #
         dock_status = Dock("Telescope status")
         dock_area.addDock(dock_status)
-    
+
     def handle_data(self, data):
         return

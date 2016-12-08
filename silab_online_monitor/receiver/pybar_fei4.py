@@ -79,21 +79,21 @@ class PybarFEI4(Receiver):
         # Global config dock
         self.global_conf_list_widget = Qt.QListWidget()
         dock_global_config.addWidget(self.global_conf_list_widget)
-        
-        #color occupancy
+
+        # color occupancy
         poss = np.array([0.0, 0.6, 1.0])
-        color = np.array([[25,25,112,255],[173,255,47,255],[255,0,0,255]], dtype=np.ubyte) #[RED,GREEN,BLUE,BLACK/WHITE]
+        color = np.array([[25, 25, 112, 255], [173, 255, 47, 255], [255, 0, 0, 255]], dtype=np.ubyte)  # [RED,GREEN,BLUE,BLACK/WHITE]
         mapp = pg.ColorMap(poss, color)
         lutt = mapp.getLookupTable(0.0, 1.0, 100)
-        
+
         # Different plot docks
         occupancy_graphics = pg.GraphicsLayoutWidget()
         occupancy_graphics.show()
         view = occupancy_graphics.addViewBox()
         self.occupancy_img = pg.ImageItem(border='w')
         self.occupancy_img.setLookupTable(lutt, update=True)
-        #view.addItem(self.occupancy_img)
-        plot = pg.PlotWidget(viewBox=view,labels={'bottom':'Column','left':'Row'})
+        # view.addItem(self.occupancy_img)
+        plot = pg.PlotWidget(viewBox=view, labels={'bottom': 'Column', 'left': 'Row'})
         plot.addItem(self.occupancy_img)
         #view.setRange(QtCore.QRectF(0, 0, 80, 336))
         dock_occcupancy.addWidget(plot)
@@ -132,7 +132,7 @@ class PybarFEI4(Receiver):
         self.plot_delay = 0
 
     def deserialze_data(self, data):
-        datar, meta  = utils.simple_dec(data)
+        datar, meta = utils.simple_dec(data)
         if 'occupancies' in meta:
             meta['occupancies'] = datar
         return meta
