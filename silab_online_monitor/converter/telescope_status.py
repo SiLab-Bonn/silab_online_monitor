@@ -13,7 +13,9 @@ class TelescopeStatus(Transceiver):
         self.set_bidirectional_communication()  # We want to be able to change the histogrammmer settings
 
     def setup_interpretation(self):
-        return
+        # variables to determine whether to do sth or not
+        self.active_tab = None  # stores name (str) of active tab in online monitor
+        self.tel_stat_tab = 'Telescope_Status'  # store name (str) of Telescope_Status tab
 
     def deserialze_data(self, data):  # According to pyBAR data serilization
         datar, meta = utils.simple_dec(data)
@@ -22,10 +24,15 @@ class TelescopeStatus(Transceiver):
         return meta
 
     def interpret_data(self, data):
+        
+        if self.active_tab != self.tel_stat_tab:  # if active tab in online monitor is not telescope status, return
+            return
         return data
 
     def serialze_data(self, data):
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 
     def handle_command(self, command):
-        return
+        
+        if 'ACTIVETAB' in command[0]:  # received signal is 'ACTIVETAB tab' where tab is the name (str) of the selected tab in online monitor
+            self.active_tab = str(command[0].split()[1])
