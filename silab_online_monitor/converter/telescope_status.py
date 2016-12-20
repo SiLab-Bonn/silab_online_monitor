@@ -13,17 +13,16 @@ class TelescopeStatus(Transceiver):
         self.set_bidirectional_communication()  # We want to be able to change the histogrammmer settings
 
     def setup_interpretation(self):
+        
         # variables to determine whether to do sth or not
         self.active_tab = None  # stores name (str) of active tab in online monitor
         self.tel_stat_tab = 'Telescope_Status'  # store name (str) of Telescope_Status tab
         
-        # dict for status data
-        #self.status_data = np.zeros(shape=(10), dtype=[('m26_voltage','f8'),('m26_current','f8'),('vdda_v','f8'),('vdda_c','f8'),('vddd_v','f8'),('vddd_c','f8')])
-        self.status_data = 0
+        # array for status data
+        self.status_data = np.zeros(shape=(1), dtype=[('time','f8'),('m26_voltage','f4'),('m26_current','f4'),('vdda_v','f4'),('vdda_c','f4'),('vddd_v','f4'),('vddd_c','f4')])
+    
         # start timer
         self.start_time = time.time()
-        # time axis
-        self.time_axis = []
         
     def deserialze_data(self, data):  # According to pyBAR data serilization
         datar, meta = utils.simple_dec(data)
@@ -36,25 +35,29 @@ class TelescopeStatus(Transceiver):
         if self.active_tab != self.tel_stat_tab:  # if active tab in online monitor is not telescope status, return
             return
         
-        for actual_data in data:
-
-            if 'meta_data' in actual_data[1]:  # meta_data is skipped
-                continue
-            if 'status' in actual_data[1]:
-                if actual_data[1]['status'].shape[0] = 0: # empty array is skipped
-                    continue
-                else:
-                    time = time.time() - self.start_time
-                    self.time_axis.append(time)
-                    self.status_data = actual_data[1]['status']
-                    
-        return [{'status': self.status_data, 'time': self.time_axis}]
-        #~ for name in self.status_data.dtype.names:
-            #~ print name
-            #~ self.status_data[name] = np.random.uniform(low=1.0,high=8.0, size=self.status_data.shape[0])
-            
-        #~ return [self.status_data]
-
+        if 'meta_data' in data: # apparently this is where scan_paramters are
+            #print data[0][1]['meta_data']['scan_parameters']
+            pass
+        
+        '''
+        This works if with each meta_data we get one value for each scan_parameter (which is correct i guess)
+        '''
+        
+        # get time passed since converter was started
+        now = time.time() - self.start_time
+        self.status_data['time'] = now
+        
+        # simulate data for testing
+        self.status_data['m26_current'] = np.random.uniform(3.0,3.31)
+        self.status_data['m26_voltage'] = np.random.uniform(8.0,8.31)
+        self.status_data['vdda_v'] = np.random.uniform(1.5,1.31)
+        self.status_data['vddd_v'] = np.random.uniform(1.2,1.31)
+        self.status_data['vdda_c'] = np.random.uniform(0.3,0.35)
+        self.status_data['vddd_c'] = np.random.uniform(0.1,0.15)
+        
+        return [{'status': self.status_data}] # this is the format the serializer needs; dict
+        
+        
     def serialze_data(self, data):
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 

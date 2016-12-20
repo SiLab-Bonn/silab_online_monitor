@@ -20,6 +20,19 @@ class TelescopeStatus(Receiver):
 
     def setup_widgets(self, parent, name):
         
+        # start time to display values in QLCDWidgets
+        self.count = 0
+        self.start_time = time.time()
+        
+        # arrays for plots
+        self.time_array = []
+        self.vdda_v_array = []
+        self.vdda_c_array = []
+        self.vddd_v_array = []
+        self.vddd_c_array = []
+        self.m26_v_array = []
+        self.m26_c_array = []
+        
         # add status tab to online monitor
         dock_area = DockArea()
         parent.addTab(dock_area, name)
@@ -55,12 +68,16 @@ class TelescopeStatus(Receiver):
         self.current_vddd_c = QtGui.QLCDNumber()
         self.current_vdda_v.setDecMode()
         self.current_vddd_v.setDecMode()
-        self.current_vdda_v.setNumDigits(5)
-        self.current_vddd_v.setNumDigits(5)
+        self.current_vdda_v.setNumDigits(4)
+        self.current_vddd_v.setNumDigits(4)
+        self.current_vdda_v.setSmallDecimalPoint(True)
+        self.current_vddd_v.setSmallDecimalPoint(True)
         self.current_vdda_c.setDecMode()
         self.current_vddd_c.setDecMode()
-        self.current_vdda_c.setNumDigits(5)
-        self.current_vddd_c.setNumDigits(5)
+        self.current_vdda_c.setNumDigits(4)
+        self.current_vddd_c.setNumDigits(4)
+        self.current_vdda_c.setSmallDecimalPoint(True)
+        self.current_vddd_c.setSmallDecimalPoint(True)
         self.current_vdda_v.setMaximumSize(150,50)
         self.current_vddd_v.setMaximumSize(150,50)
         self.current_vdda_c.setMaximumSize(150,50)
@@ -85,8 +102,8 @@ class TelescopeStatus(Receiver):
         vddd_label_v.setMaximumSize(50,50)
         vdda_label_v.setFont(QtGui.QFont('System', 12))
         vddd_label_v.setFont(QtGui.QFont('System', 12))
-        vddd_label_c = QtGui.QLabel('mA')
-        vdda_label_c = QtGui.QLabel('mA')
+        vddd_label_c = QtGui.QLabel('A')
+        vdda_label_c = QtGui.QLabel('A')
         vdda_label_c.setMinimumSize(30,50)
         vddd_label_c.setMinimumSize(30,50)
         vdda_label_c.setMaximumSize(50,50)
@@ -117,8 +134,10 @@ class TelescopeStatus(Receiver):
         self.current_m26_v = QtGui.QLCDNumber()
         self.current_m26_c.setDecMode()
         self.current_m26_v.setDecMode()
-        self.current_m26_v.setNumDigits(5)
-        self.current_m26_c.setNumDigits(5)
+        self.current_m26_v.setNumDigits(4)
+        self.current_m26_v.setSmallDecimalPoint(True)
+        self.current_m26_c.setNumDigits(4)
+        self.current_m26_c.setSmallDecimalPoint(True)
         self.current_m26_c.setMaximumSize(150,50)
         self.current_m26_v.setMaximumSize(150,50)
         self.current_m26_c.setMinimumSize(100,50)
@@ -131,7 +150,7 @@ class TelescopeStatus(Receiver):
         m26_label_v.setMaximumSize(100,50)
         m26_label_c.setFont(QtGui.QFont('System', 16))
         m26_label_v.setFont(QtGui.QFont('System', 16))
-        c_label_m26 = QtGui.QLabel('mA')
+        c_label_m26 = QtGui.QLabel('A')
         v_label_m26 = QtGui.QLabel('V')
         c_label_m26.setMinimumSize(30,50)
         v_label_m26.setMinimumSize(30,50)
@@ -152,81 +171,113 @@ class TelescopeStatus(Receiver):
         dock_status_m26.addWidget(status_widget_m26)
         dock_status_fei4.addWidget(status_widget_fei4)
         
-        # connect reset buttons
-        self.reset_m26_c.clicked.connect(lambda: self.send_command('RESET_M26_CURRENT'))
-        self.reset_m26_v.clicked.connect(lambda: self.send_command('RESET_M26_VOLTAGE'))
-        self.reset_fei4_vdda.clicked.connect(lambda: self.send_command('RESET_FEI4_VDDA'))
-        self.reset_fei4_vddd.clicked.connect(lambda: self.send_command('RESET_FEI4_VDDD'))
-        
         # add dock for Mimosa power supply
         dock_m26 = Dock("Mimosa power supply")
-        
-        # add plot with two axes for volatge and current
-        plot_graphics_m26 = pg.GraphicsView()
+        plot_graphics_m26 = pg.GraphicsLayoutWidget()
         plot_graphics_m26.show()
-        plot_layout = pg.GraphicsLayout()
-        plot_graphics_m26.setCentralWidget(plot_layout)
-        axis_current = pg.AxisItem("left")
-        plot_layout.addItem(axis_current, row = 2, col = 5,  rowspan=1, colspan=1)
-        view_current = pg.ViewBox()
-        self.plot_current = pg.PlotItem(viewBox=view_current)
-        view_voltage = pg.ViewBox()
-        self.plot_voltage = pg.PlotItem(viewBox=view_voltage)
-        plot_layout.addItem(self.plot_voltage, row = 2, col = 6,  rowspan=1, colspan=1) # add plotitem to layout
-        plot_layout.scene().addItem(view_current)
-        view_current.disableAutoRange(axis=view_current.YAxis)
-        axis_current.linkToView(view_current)
-        view_current.setXLink(view_voltage)
-        view_current.setBackgroundColor('#545454')
-        self.plot_voltage.getAxis("left").setLabel('Voltage / V')
-        self.plot_voltage.getAxis("bottom").setLabel('Time / s')
-        self.plot_voltage.addLegend(offset=(20,20))
-        self.plot_current.addLegend(offset=(120,20))
-        voltage_pen = QtGui.QPen()
-        voltage_pen.setStyle(QtCore.Qt.SolidLine)
-        voltage_pen.setWidthF(1)
-        current_pen = QtGui.QPen()
-        current_pen.setStyle(QtCore.Qt.DashLine)
-        current_pen.setWidthF(1)
-        self.plot_voltage.getAxis('left').setPen(voltage_pen)
-        self.plot_voltage.getAxis('left').setGrid(155)
-        axis_current.setPen(current_pen)
-        axis_current.setGrid(155)
-        view_voltage.setLimits(minYRange=1)
-        view_current.setLimits(minYRange=10)
-        axis_current.setLabel('Current / mA')
+        plot_m26_v = pg.PlotItem(labels={'left': 'Voltage / V', 'bottom': 'Time / s'})
+        plot_m26_c = pg.PlotItem(labels={'left': 'Current / A', 'bottom': 'Time / s'})
+        self.m26_v = pg.PlotCurveItem(pen='r')
+        self.m26_c = pg.PlotCurveItem(pen='g')
+        legend_m26_v = pg.LegendItem(offset=(80,10))
+        legend_m26_v.setParentItem(plot_m26_v)
+        legend_m26_v.addItem(self.m26_v, 'M26_voltage')
+        legend_m26_c = pg.LegendItem(offset=(80,10))
+        legend_m26_c.setParentItem(plot_m26_c)
+        legend_m26_c.addItem(self.m26_c, 'M26_current')
+        plot_m26_v.addItem(self.m26_v)
+        plot_m26_c.addItem(self.m26_c)
+        plot_m26_v.vb.setBackgroundColor('#545454')
+        plot_m26_c.vb.setBackgroundColor('#545454')
+        plot_m26_v.setYRange(7,9,padding=0)
+        plot_m26_c.setYRange(2,4,padding=0)
+        plot_m26_v.getAxis('left').setZValue(0)
+        plot_m26_c.getAxis('left').setZValue(0)
+        plot_m26_v.getAxis('left').setGrid(155)
+        plot_m26_c.getAxis('left').setGrid(155)
+        plot_graphics_m26.addItem(plot_m26_v, row = 0, col = 1,  rowspan=1, colspan=2)
+        plot_graphics_m26.addItem(plot_m26_c, row = 1, col = 1,  rowspan=1, colspan=2)
         dock_m26.addWidget(plot_graphics_m26)
         
-        # update view
-        def update_views():
-            view_current.setGeometry(view_voltage.sceneBoundingRect())
+        # complicated approach with two y axis for m26 v and c
         
-        # update view when viewbox was scaled
-        view_voltage.sigResized.connect(update_views)
-        view_current.enableAutoRange(axis= pg.ViewBox.XYAxes, enable=True)
-        
+        # add plot with two axes for volatge and current
+#        plot_graphics_m26 = pg.GraphicsView()
+#        plot_graphics_m26.show()
+#        plot_layout = pg.GraphicsLayout()
+#        plot_graphics_m26.setCentralWidget(plot_layout)
+#        axis_current = pg.AxisItem("left")
+#        plot_layout.addItem(axis_current, row = 2, col = 5,  rowspan=1, colspan=1)
+#        view_current = pg.ViewBox()
+#        self.plot_current = pg.PlotItem(viewBox=view_current)
+#        view_voltage = pg.ViewBox()
+#        self.plot_voltage = pg.PlotItem(viewBox=view_voltage)
+#        plot_layout.addItem(self.plot_voltage, row = 2, col = 6,  rowspan=1, colspan=1) # add plotitem to layout
+#        plot_layout.scene().addItem(view_current)
+#        view_current.disableAutoRange(axis=view_current.YAxis)
+#        axis_current.linkToView(view_current)
+#        view_current.setXLink(view_voltage)
+#        view_current.setBackgroundColor('#545454')
+#        self.plot_voltage.getAxis("left").setLabel('Voltage / V')
+#        self.plot_voltage.getAxis("bottom").setLabel('Time / s')
+#        self.plot_voltage.addLegend(offset=(20,20))
+#        self.plot_current.addLegend(offset=(120,20))
+#        voltage_pen = QtGui.QPen()
+#        voltage_pen.setStyle(QtCore.Qt.SolidLine)
+#        voltage_pen.setWidthF(1)
+#        current_pen = QtGui.QPen()
+#        current_pen.setStyle(QtCore.Qt.DashLine)
+#        current_pen.setWidthF(1)
+#        self.plot_voltage.getAxis('left').setPen(voltage_pen)
+#        self.plot_voltage.getAxis('left').setGrid(155)
+#        axis_current.setPen(current_pen)
+#        axis_current.setGrid(155)
+#        view_voltage.setLimits(minYRange=1)
+#        view_current.setLimits(minYRange=10)
+#        axis_current.setLabel('Current / mA')
+#        dock_m26.addWidget(plot_graphics_m26)
+#        
+#        # update view
+#        def update_views():
+#            view_current.setGeometry(view_voltage.sceneBoundingRect())
+#        
+#        # update view when viewbox was scaled
+#        view_voltage.sigResized.connect(update_views)
+#        view_current.enableAutoRange(axis= pg.ViewBox.XYAxes, enable=True)
+
         # add dock for FE-I4 power supply
         dock_fei4 = Dock("FE-I4 power supply")
         plot_graphics_fei4 = pg.GraphicsLayoutWidget()
         plot_graphics_fei4.show()
-        self.fei4_plot_v = pg.PlotItem(labels={'left': 'Voltage / V', 'bottom': 'Time / s'})
-        self.fei4_plot_c = pg.PlotItem(labels={'left': 'Current / mA', 'bottom': 'Time / s'})
-        self.fei4_plot_v.vb.setBackgroundColor('#545454')
-        self.fei4_plot_c.vb.setBackgroundColor('#545454')
-        self.fei4_plot_v.addLegend(offset=(20,20))
-        self.fei4_plot_c.addLegend(offset=(20,20))
-        self.fei4_plot_v.setXRange(0, 60)
-        self.fei4_plot_v.setYRange(0,2,padding=0)
-        self.fei4_plot_c.setXRange(0, 60)
-        self.fei4_plot_c.setYRange(60,120,padding=0)
-        self.fei4_plot_v.getAxis('left').setZValue(0)
-        self.fei4_plot_c.getAxis('left').setZValue(0)
-        self.fei4_plot_v.getAxis('left').setGrid(155)
-        self.fei4_plot_c.getAxis('left').setGrid(155)
-        plot_graphics_fei4.addItem(self.fei4_plot_v, row = 0, col = 1,  rowspan=1, colspan=2)
-        plot_graphics_fei4.addItem(self.fei4_plot_c, row = 1, col = 1,  rowspan=1, colspan=2)
+        plot_fei4_v = pg.PlotItem(labels={'left': 'Voltage / V', 'bottom': 'Time / s'})
+        plot_fei4_c = pg.PlotItem(labels={'left': 'Current / A', 'bottom': 'Time / s'})
+        self.vdda_v = pg.PlotCurveItem(pen='r')
+        self.vddd_v = pg.PlotCurveItem(pen='g')
+        self.vdda_c = pg.PlotCurveItem(pen='r')
+        self.vddd_c = pg.PlotCurveItem(pen='g')
+        legend_fei4_v = pg.LegendItem(offset=(80,10))
+        legend_fei4_v.setParentItem(plot_fei4_v)
+        legend_fei4_v.addItem(self.vdda_v, 'VDDA')
+        legend_fei4_v.addItem(self.vddd_v, 'VDDD')
+        legend_fei4_c = pg.LegendItem(offset=(80,10))
+        legend_fei4_c.setParentItem(plot_fei4_c)
+        legend_fei4_c.addItem(self.vdda_c, 'VDDA_current')
+        legend_fei4_c.addItem(self.vddd_c, 'VDDD_current')
+        plot_fei4_v.addItem(self.vdda_v)
+        plot_fei4_v.addItem(self.vddd_v)
+        plot_fei4_c.addItem(self.vdda_c)
+        plot_fei4_c.addItem(self.vddd_c)
+        plot_fei4_v.vb.setBackgroundColor('#545454')
+        plot_fei4_c.vb.setBackgroundColor('#545454')
+        plot_fei4_v.setYRange(0.5,2.5,padding=0)
+        plot_fei4_c.setYRange(0,0.5,padding=0)
+        plot_fei4_v.getAxis('left').setZValue(0)
+        plot_fei4_c.getAxis('left').setZValue(0)
+        plot_fei4_v.getAxis('left').setGrid(155)
+        plot_fei4_c.getAxis('left').setGrid(155)
+        plot_graphics_fei4.addItem(plot_fei4_v, row = 0, col = 1,  rowspan=1, colspan=2)
+        plot_graphics_fei4.addItem(plot_fei4_c, row = 1, col = 1,  rowspan=1, colspan=2)
         dock_fei4.addWidget(plot_graphics_fei4)
-        #dock_fei4.addWidget(self.fei4_plot_c)
 
         # add Docks to DockArea
         dock_area.addDock(dock_status_m26, 'top')
@@ -234,48 +285,62 @@ class TelescopeStatus(Receiver):
         dock_area.addDock(dock_m26, 'bottom', dock_status_m26)
         dock_area.addDock(dock_fei4, 'bottom', dock_status_fei4)
         
-        # display values for testing
-        self.current_vdda_v.display(np.random.uniform(1.5,1.55))
-        self.current_vddd_v.display(np.random.uniform(1.2,1.25))
-        self.current_vdda_c.display(np.random.uniform(100,100.5))
-        self.current_vddd_c.display(np.random.uniform(110,110.5))
-        self.current_m26_c.display(np.random.uniform(100,100.5))
-        self.current_m26_v.display(np.random.uniform(8.0,8.05))
-        
-        # make test data
-        test_vdda = np.random.uniform(low=1.495, high=1.505, size=60)
-        test_vddd = np.random.uniform(low=1.195, high=1.205, size=60)
-        test_vddd_c = np.random.uniform(low=84.5, high=85.0, size=60)
-        test_vdda_c = np.random.uniform(low=99.5, high=100.0, size=60)
-        test_mimosa_v = np.random.uniform(low=7.95,high=8.0, size=60)
-        test_mimosa_i = np.random.uniform(low=74.5,high=75.0, size=60)
-        
-        # test plots
-        self.fei4_plot_v.plot(test_vdda, pen='r', name='VDDA')
-        self.fei4_plot_v.plot(test_vddd, pen='g', name='VDDD')
-        self.fei4_plot_c.plot(test_vdda_c, pen='r', name='VDDA_current')
-        self.fei4_plot_c.plot(test_vddd_c, pen='g', name='VDDD_current')
-        #voltage_plot_pen = QtGui.QPen()
-        #voltage_plot_pen.setStyle(QtCore.Qt.DashLine)
-        #voltage_plot_pen.setWidthF(0.005)
-        #voltage_plot_pen.setColor(QtGui.QColor('red'))
-        self.plot_voltage.plot(test_mimosa_v, pen='r', name="Voltage")
-        self.plot_current.plot(test_mimosa_i, pen='g', name="Current")
-        
-                
+#        voltage_plot_pen = QtGui.QPen()
+#        voltage_plot_pen.setStyle(QtCore.Qt.DashLine)
+#        voltage_plot_pen.setWidthF(0.005)
+#        voltage_plot_pen.setColor(QtGui.QColor('red'))
+
+#        def reset_arrays(reset_button):
+#            self.time_array = []
+#            if 'M26' in reset_button:
+#                if 'VOLTAGE' in reset_button:
+#                    self.m26_v_array = []
+#                elif 'CURRENT' in reset_button:
+#                    self.m26_c_array = []
+#            elif 'FEI4' in reset_button:
+#                if 'VDDA' in reset_button:
+#                    self.vdda_v_array = []
+#                    self.vdda_c_array = []
+#                elif 'VDDD' in reset_button:
+#                    self.vddd_v_array = []
+#                    self.vddd_c_array = []
+                        
+#        # connect reset buttons
+#        self.reset_m26_c.clicked.connect(lambda: reset_arrays('RESET_M26_CURRENT'))
+#        self.reset_m26_v.clicked.connect(lambda: reset_arrays('RESET_M26_VOLTAGE'))
+#        self.reset_fei4_vdda.clicked.connect(lambda: reset_arrays('RESET_FEI4_VDDA'))
+#        self.reset_fei4_vddd.clicked.connect(lambda: reset_arrays('RESET_FEI4_VDDD'))
+                    
     def deserialze_data(self, data):
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
         
     def handle_data(self, data):
-        #~ status_data = np.zeros(shape=(10), dtype=[('m26_voltage','f8'),('m26_current','f8'),('vdda_v','f8'),('vdda_c','f8'),('vddd_v','f8'),('vddd_c','f8')])
-        #~ for name in status_data.dtype.names:
-            #~ print name
-            #~ status_data[name] = np.random.uniform(low=1.0,high=8.0, size=status_data.shape[0])
+        
+        if 'status' in data:
             
-        #~ self.fei4_plot_v.plot(status_data['vdda_v'], pen='r', name='VDDA')
-        #~ self.fei4_plot_v.plot(status_data['vddd_v'], pen='g', name='VDDD')
-        #~ self.fei4_plot_c.plot(status_data['vdda_c'], pen='r', name='VDDA_current')
-        #~ self.fei4_plot_c.plot(status_data['vddd_c'], pen='g', name='VDDD_current')
-        #~ self.plot_voltage.plot(status_data['m26_voltage'], pen='r', name="Voltage")
-        #~ self.plot_current.plot(status_data['m26_current'], pen='g', name="Current")
-        return
+            # update QLCDDisplays every second
+            if time.time()-self.start_time >= self.count:
+                
+                self.current_vdda_v.display(format(data['status']['vdda_v'][0], '.2f')) # note that format returns type str and QLCDWidgets now display str
+                self.current_vddd_v.display(format(data['status']['vddd_v'][0], '.2f'))
+                self.current_vdda_c.display(format(data['status']['vdda_c'][0], '.3f'))
+                self.current_vddd_c.display(format(data['status']['vddd_c'][0], '.3f'))
+                self.current_m26_c.display(format(data['status']['m26_current'][0], '.2f'))
+                self.current_m26_v.display(format(data['status']['m26_voltage'][0], '.2f'))
+                self.count += 1.0
+                
+            # fill data arrays; note that arrays get bigger with time in this approach
+            self.time_array.append(data['status']['time'][0])
+            self.vdda_v_array.append(data['status']['vdda_v'][0])
+            self.vdda_c_array.append(data['status']['vdda_c'][0])
+            self.vddd_v_array.append(data['status']['vddd_v'][0])
+            self.vddd_c_array.append(data['status']['vddd_c'][0])
+            self.m26_v_array.append(data['status']['m26_voltage'][0])
+            self.m26_c_array.append(data['status']['m26_current'][0])
+            
+            self.vdda_v.setData(self.time_array, self.vdda_v_array, autoDownsample=True)
+            self.vdda_c.setData(self.time_array, self.vdda_c_array, autoDownsample=True)
+            self.vddd_v.setData(self.time_array, self.vddd_v_array, autoDownsample=True)
+            self.vddd_c.setData(self.time_array, self.vddd_c_array, autoDownsample=True)
+            self.m26_v.setData(self.time_array, self.m26_v_array, autoDownsample=True)
+            self.m26_c.setData(self.time_array, self.m26_c_array, autoDownsample=True)
