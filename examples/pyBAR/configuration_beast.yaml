@@ -3,7 +3,7 @@ producer_sim :
         kind : pybar_fei4
         delay : 0.1
         backend: tcp://127.0.0.1:5500
-        data_file: /home/nandita/git/silab_online_monitor/examples/pyBAR/data_2chips_patrick.h5
+        data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/data_2chips_patrick.h5
 # Change the Front End IP address of the splitter to DAQ's and comment out producer_sim to get data from the chip
 
 converter :
@@ -80,7 +80,7 @@ receiver :
         frontend : tcp://127.0.0.1:1300
       
     Receiver 2:
-            kind : tdc_receiver
+            kind : beast_tdc_receiver
             frontend : tcp://127.0.0.1:1300
 #     DUT0 :
 #         kind : pybar_fei4
