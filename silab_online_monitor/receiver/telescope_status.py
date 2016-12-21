@@ -20,18 +20,20 @@ class TelescopeStatus(Receiver):
 
     def setup_widgets(self, parent, name):
         
-        # start time to display values in QLCDWidgets
-        self.count = 0
+        # add some things we need
+        self.count_seconds = 0
+        self.array_index = 0
         self.start_time = time.time()
+        self.array_size = (2,1000)
         
-        # arrays for plots
-        self.time_array = []
-        self.vdda_v_array = []
-        self.vdda_c_array = []
-        self.vddd_v_array = []
-        self.vddd_c_array = []
-        self.m26_v_array = []
-        self.m26_c_array = []
+        # add arrays for plots; array[0] is time axis
+        self.vdda_v_array = np.zeros(shape=self.array_size)
+        self.vdda_c_array = np.zeros(shape=self.array_size)
+        self.vddd_v_array = np.zeros(shape=self.array_size)
+        self.vddd_c_array = np.zeros(shape=self.array_size)
+        self.m26_v_array = np.zeros(shape=self.array_size)
+        self.m26_c_array = np.zeros(shape=self.array_size)
+        self.m26_c_array = np.zeros(shape=self.array_size)
         
         # add status tab to online monitor
         dock_area = DockArea()
@@ -285,41 +287,44 @@ class TelescopeStatus(Receiver):
         dock_area.addDock(dock_m26, 'bottom', dock_status_m26)
         dock_area.addDock(dock_fei4, 'bottom', dock_status_fei4)
         
-#        voltage_plot_pen = QtGui.QPen()
-#        voltage_plot_pen.setStyle(QtCore.Qt.DashLine)
-#        voltage_plot_pen.setWidthF(0.005)
-#        voltage_plot_pen.setColor(QtGui.QColor('red'))
+        # add function to reset arrays
+        def reset_arrays(reset_button):
 
-#        def reset_arrays(reset_button):
-#            self.time_array = []
-#            if 'M26' in reset_button:
-#                if 'VOLTAGE' in reset_button:
-#                    self.m26_v_array = []
-#                elif 'CURRENT' in reset_button:
-#                    self.m26_c_array = []
-#            elif 'FEI4' in reset_button:
-#                if 'VDDA' in reset_button:
-#                    self.vdda_v_array = []
-#                    self.vdda_c_array = []
-#                elif 'VDDD' in reset_button:
-#                    self.vddd_v_array = []
-#                    self.vddd_c_array = []
+            if 'M26' in reset_button:
+                if 'VOLTAGE' in reset_button:
+                    self.m26_v_array = np.zeros_like(self.m26_v_array)
+                elif 'CURRENT' in reset_button:
+                    self.m26_c_array = np.zeros_like(self.m26_c_array)
+            elif 'FEI4' in reset_button:
+                if 'VDDA' in reset_button:
+                    self.vdda_v_array = np.zeros_like(self.vdda_v_array)
+                    self.vdda_c_array = np.zeros_like(self.vdda_c_array)
+                elif 'VDDD' in reset_button:
+                    self.vddd_v_array = np.zeros_like(self.vddd_v_array)
+                    self.vddd_c_array = np.zeros_like(self.vddd_c_array)
                         
-#        # connect reset buttons
-#        self.reset_m26_c.clicked.connect(lambda: reset_arrays('RESET_M26_CURRENT'))
-#        self.reset_m26_v.clicked.connect(lambda: reset_arrays('RESET_M26_VOLTAGE'))
-#        self.reset_fei4_vdda.clicked.connect(lambda: reset_arrays('RESET_FEI4_VDDA'))
-#        self.reset_fei4_vddd.clicked.connect(lambda: reset_arrays('RESET_FEI4_VDDD'))
+        # connect reset buttons
+        self.reset_m26_c.clicked.connect(lambda: reset_arrays('RESET_M26_CURRENT'))
+        self.reset_m26_v.clicked.connect(lambda: reset_arrays('RESET_M26_VOLTAGE'))
+        self.reset_fei4_vdda.clicked.connect(lambda: reset_arrays('RESET_FEI4_VDDA'))
+        self.reset_fei4_vddd.clicked.connect(lambda: reset_arrays('RESET_FEI4_VDDD'))
                     
     def deserialze_data(self, data):
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
         
     def handle_data(self, data):
         
+        # add function to shift arrays
+        def shift_data(array, parameter, time):
+                array_new = np.roll(array, -1)
+                array_new[0][-1] = time
+                array_new[1][-1] = parameter
+                return array_new
+        
         if 'status' in data:
             
             # update QLCDDisplays every second
-            if time.time()-self.start_time >= self.count:
+            if time.time()-self.start_time >= self.count_seconds:
                 
                 self.current_vdda_v.display(format(data['status']['vdda_v'][0], '.2f')) # note that format returns type str and QLCDWidgets now display str
                 self.current_vddd_v.display(format(data['status']['vddd_v'][0], '.2f'))
@@ -327,20 +332,47 @@ class TelescopeStatus(Receiver):
                 self.current_vddd_c.display(format(data['status']['vddd_c'][0], '.3f'))
                 self.current_m26_c.display(format(data['status']['m26_current'][0], '.2f'))
                 self.current_m26_v.display(format(data['status']['m26_voltage'][0], '.2f'))
-                self.count += 1.0
-                
-            # fill data arrays; note that arrays get bigger with time in this approach
-            self.time_array.append(data['status']['time'][0])
-            self.vdda_v_array.append(data['status']['vdda_v'][0])
-            self.vdda_c_array.append(data['status']['vdda_c'][0])
-            self.vddd_v_array.append(data['status']['vddd_v'][0])
-            self.vddd_c_array.append(data['status']['vddd_c'][0])
-            self.m26_v_array.append(data['status']['m26_voltage'][0])
-            self.m26_c_array.append(data['status']['m26_current'][0])
+                self.count_seconds += 1.0
             
-            self.vdda_v.setData(self.time_array, self.vdda_v_array, autoDownsample=True)
-            self.vdda_c.setData(self.time_array, self.vdda_c_array, autoDownsample=True)
-            self.vddd_v.setData(self.time_array, self.vddd_v_array, autoDownsample=True)
-            self.vddd_c.setData(self.time_array, self.vddd_c_array, autoDownsample=True)
-            self.m26_v.setData(self.time_array, self.m26_v_array, autoDownsample=True)
-            self.m26_c.setData(self.time_array, self.m26_c_array, autoDownsample=True)
+            # fill arrays with data
+            if self.array_index < self.array_size[1]: # first fill arrays up
+                
+                self.vdda_v_array[0][self.array_index] = data['status']['time'][0]
+                self.vdda_v_array[1][self.array_index] = data['status']['vdda_v'][0]
+                self.vdda_c_array[0][self.array_index] = data['status']['time'][0]
+                self.vdda_c_array[1][self.array_index] = data['status']['vdda_c'][0]
+                self.vddd_v_array[0][self.array_index] = data['status']['time'][0]
+                self.vddd_v_array[1][self.array_index] = data['status']['vddd_v'][0]
+                self.vddd_c_array[0][self.array_index] = data['status']['time'][0]
+                self.vddd_c_array[1][self.array_index] = data['status']['vddd_c'][0]
+                self.m26_v_array[0][self.array_index] = data['status']['time'][0]
+                self.m26_v_array[1][self.array_index] = data['status']['m26_voltage'][0]
+                self.m26_c_array[0][self.array_index] = data['status']['time'][0]
+                self.m26_c_array[1][self.array_index] = data['status']['m26_current'][0]
+                
+                # set the plot data to the corresponding arrays where only the the values up to self.array_index are plotted
+                self.vdda_v.setData(self.vdda_v_array[0][:self.array_index], self.vdda_v_array[1][:self.array_index], autoDownsample=True)
+                self.vdda_c.setData(self.vdda_c_array[0][:self.array_index], self.vdda_c_array[1][:self.array_index], autoDownsample=True)
+                self.vddd_v.setData(self.vddd_v_array[0][:self.array_index], self.vddd_v_array[1][:self.array_index], autoDownsample=True)
+                self.vddd_c.setData(self.vddd_c_array[0][:self.array_index], self.vddd_c_array[1][:self.array_index], autoDownsample=True)
+                self.m26_v.setData(self.m26_v_array[0][:self.array_index], self.m26_v_array[1][:self.array_index], autoDownsample=True)
+                self.m26_c.setData(self.m26_c_array[0][:self.array_index], self.m26_c_array[1][:self.array_index], autoDownsample=True)
+                
+                self.array_index += 1
+                
+            else: # if arrays are full, shift arrays one to the left and add new data at the end of array
+                
+                self.vdda_v_array = shift_data(self.vdda_v_array, data['status']['vdda_v'][0], data['status']['time'][0])
+                self.vdda_c_array = shift_data(self.vdda_c_array, data['status']['vdda_c'][0], data['status']['time'][0])
+                self.vddd_v_array = shift_data(self.vddd_v_array, data['status']['vddd_v'][0], data['status']['time'][0])
+                self.vddd_c_array = shift_data(self.vddd_c_array, data['status']['vddd_c'][0], data['status']['time'][0])
+                self.m26_v_array = shift_data(self.m26_v_array, data['status']['m26_voltage'][0], data['status']['time'][0])
+                self.m26_c_array = shift_data(self.m26_c_array, data['status']['m26_current'][0], data['status']['time'][0])
+                
+                # set plot data
+                self.vdda_v.setData(self.vdda_v_array[0], self.vdda_v_array[1], autoDownsample=True)
+                self.vdda_c.setData(self.vdda_c_array[0], self.vdda_c_array[1], autoDownsample=True)
+                self.vddd_v.setData(self.vddd_v_array[0], self.vddd_v_array[1], autoDownsample=True)
+                self.vddd_c.setData(self.vddd_c_array[0], self.vddd_c_array[1], autoDownsample=True)
+                self.m26_v.setData(self.m26_v_array[0], self.m26_v_array[1], autoDownsample=True)
+                self.m26_c.setData(self.m26_c_array[0], self.m26_c_array[1], autoDownsample=True)
