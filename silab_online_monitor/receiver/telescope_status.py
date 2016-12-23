@@ -20,11 +20,15 @@ class TelescopeStatus(Receiver):
 
     def setup_widgets(self, parent, name):
         
-        # add some things we need
+        # add some things we need for timing
         self.count_seconds = 0
         self.array_index = 0
+        self.update_time_index = 0
         self.start_time = time.time()
-        self.array_size = (2,1000)
+        self.shift_cycle_time = 0
+        
+        # set array size; must be shape=(2, x); increase x to plot longer time span
+        self.array_size = (2,3200)
         
         # add arrays for plots; array[0] is time axis
         self.vdda_v_array = np.zeros(shape=self.array_size)
@@ -33,7 +37,7 @@ class TelescopeStatus(Receiver):
         self.vddd_c_array = np.zeros(shape=self.array_size)
         self.m26_v_array = np.zeros(shape=self.array_size)
         self.m26_c_array = np.zeros(shape=self.array_size)
-        self.m26_c_array = np.zeros(shape=self.array_size)
+        self.all_arrays = [self.vdda_v_array, self.vdda_c_array, self.vddd_v_array, self.vddd_c_array, self.m26_v_array, self.m26_c_array]
         
         # add status tab to online monitor
         dock_area = DockArea()
@@ -160,8 +164,8 @@ class TelescopeStatus(Receiver):
         v_label_m26.setMaximumSize(50,50)
         c_label_m26.setFont(QtGui.QFont('System', 12))
         v_label_m26.setFont(QtGui.QFont('System', 12))
-        status_layout_m26.addWidget(self.reset_m26_c, 0,0,1,1)
-        status_layout_m26.addWidget(self.reset_m26_v, 1,0,1,1)
+        status_layout_m26.addWidget(self.reset_m26_v, 0,0,1,1)
+        status_layout_m26.addWidget(self.reset_m26_c, 1,0,1,1)
         status_layout_m26.addWidget(m26_label_c, 0,2,1,1)
         status_layout_m26.addWidget(m26_label_v, 1,2,1,1)
         status_layout_m26.addWidget(self.current_m26_c, 0,3,1,1)
@@ -193,6 +197,8 @@ class TelescopeStatus(Receiver):
         plot_m26_c.vb.setBackgroundColor('#545454')
         plot_m26_v.setYRange(7,9,padding=0)
         plot_m26_c.setYRange(2,4,padding=0)
+        plot_m26_v.setXRange(-60,0)
+        plot_m26_c.setXRange(-60,0)
         plot_m26_v.getAxis('left').setZValue(0)
         plot_m26_c.getAxis('left').setZValue(0)
         plot_m26_v.getAxis('left').setGrid(155)
@@ -273,6 +279,8 @@ class TelescopeStatus(Receiver):
         plot_fei4_c.vb.setBackgroundColor('#545454')
         plot_fei4_v.setYRange(0.5,2.5,padding=0)
         plot_fei4_c.setYRange(0,0.5,padding=0)
+        plot_fei4_v.setXRange(-60,0)
+        plot_fei4_c.setXRange(-60,0)
         plot_fei4_v.getAxis('left').setZValue(0)
         plot_fei4_c.getAxis('left').setZValue(0)
         plot_fei4_v.getAxis('left').setGrid(155)
@@ -287,21 +295,21 @@ class TelescopeStatus(Receiver):
         dock_area.addDock(dock_m26, 'bottom', dock_status_m26)
         dock_area.addDock(dock_fei4, 'bottom', dock_status_fei4)
         
-        # add function to reset arrays
+        # add function to reset data arrays
         def reset_arrays(reset_button):
 
             if 'M26' in reset_button:
                 if 'VOLTAGE' in reset_button:
-                    self.m26_v_array = np.zeros_like(self.m26_v_array)
+                    self.m26_v_array[1] = np.zeros_like(self.m26_v_array[1])
                 elif 'CURRENT' in reset_button:
-                    self.m26_c_array = np.zeros_like(self.m26_c_array)
+                    self.m26_c_array[1] = np.zeros_like(self.m26_c_array[1])
             elif 'FEI4' in reset_button:
                 if 'VDDA' in reset_button:
-                    self.vdda_v_array = np.zeros_like(self.vdda_v_array)
-                    self.vdda_c_array = np.zeros_like(self.vdda_c_array)
+                    self.vdda_v_array[1] = np.zeros_like(self.vdda_v_array[1])
+                    self.vdda_c_array[1] = np.zeros_like(self.vdda_c_array[1])
                 elif 'VDDD' in reset_button:
-                    self.vddd_v_array = np.zeros_like(self.vddd_v_array)
-                    self.vddd_c_array = np.zeros_like(self.vddd_c_array)
+                    self.vddd_v_array[1] = np.zeros_like(self.vddd_v_array[1])
+                    self.vddd_c_array[1] = np.zeros_like(self.vddd_c_array[1])
                         
         # connect reset buttons
         self.reset_m26_c.clicked.connect(lambda: reset_arrays('RESET_M26_CURRENT'))
@@ -314,12 +322,19 @@ class TelescopeStatus(Receiver):
         
     def handle_data(self, data):
         
-        # add function to shift arrays
-        def shift_data(array, parameter, time):
-                array_new = np.roll(array, -1)
-                array_new[0][-1] = time
-                array_new[1][-1] = parameter
+        # add function to shift data array 
+        def shift_data(array, parameter):
+                array_new = np.roll(array[1], 1)
+                array_new[0] = parameter
                 return array_new
+        
+        # update time if we just started or once shifted through the data array
+        if self.array_index == 0 or self.array_index % self.array_size[1] == 0:
+            self.shift_cycle_time = time.time()
+            self.update_time_index = 0
+        
+        # time since we started or once shifted through
+        now = self.shift_cycle_time - time.time()
         
         if 'status' in data:
             
@@ -330,25 +345,24 @@ class TelescopeStatus(Receiver):
                 self.current_vddd_v.display(format(data['status']['vddd_v'][0], '.2f'))
                 self.current_vdda_c.display(format(data['status']['vdda_c'][0], '.3f'))
                 self.current_vddd_c.display(format(data['status']['vddd_c'][0], '.3f'))
-                self.current_m26_c.display(format(data['status']['m26_current'][0], '.2f'))
-                self.current_m26_v.display(format(data['status']['m26_voltage'][0], '.2f'))
+                self.current_m26_c.display(format(data['status']['m26_c'][0], '.2f'))
+                self.current_m26_v.display(format(data['status']['m26_v'][0], '.2f'))
                 self.count_seconds += 1.0
             
             # fill arrays with data
-            if self.array_index < self.array_size[1]: # first fill arrays up
+            if self.array_index < self.array_size[1]: # first fill arrays up, shift data axis to the right and add new alement to beginning to make it correspond to now (0 seconds)
                 
-                self.vdda_v_array[0][self.array_index] = data['status']['time'][0]
-                self.vdda_v_array[1][self.array_index] = data['status']['vdda_v'][0]
-                self.vdda_c_array[0][self.array_index] = data['status']['time'][0]
-                self.vdda_c_array[1][self.array_index] = data['status']['vdda_c'][0]
-                self.vddd_v_array[0][self.array_index] = data['status']['time'][0]
-                self.vddd_v_array[1][self.array_index] = data['status']['vddd_v'][0]
-                self.vddd_c_array[0][self.array_index] = data['status']['time'][0]
-                self.vddd_c_array[1][self.array_index] = data['status']['vddd_c'][0]
-                self.m26_v_array[0][self.array_index] = data['status']['time'][0]
-                self.m26_v_array[1][self.array_index] = data['status']['m26_voltage'][0]
-                self.m26_c_array[0][self.array_index] = data['status']['time'][0]
-                self.m26_c_array[1][self.array_index] = data['status']['m26_current'][0]
+                # fill time axes
+                for array in self.all_arrays:
+                    array[0][self.array_index] = now
+                
+                # set new data array by shifting old one; input are has shape=self.array_size, output has shape=(1,self.array_size[1])
+                self.vdda_v_array[1] = shift_data(self.vdda_v_array, data['status']['vdda_v'][0])
+                self.vdda_c_array[1] = shift_data(self.vdda_c_array, data['status']['vdda_c'][0])
+                self.vddd_v_array[1] = shift_data(self.vddd_v_array, data['status']['vddd_v'][0])
+                self.vddd_c_array[1] = shift_data(self.vddd_c_array, data['status']['vddd_c'][0])
+                self.m26_v_array[1] = shift_data(self.m26_v_array, data['status']['m26_v'][0])
+                self.m26_c_array[1] = shift_data(self.m26_c_array, data['status']['m26_c'][0])
                 
                 # set the plot data to the corresponding arrays where only the the values up to self.array_index are plotted
                 self.vdda_v.setData(self.vdda_v_array[0][:self.array_index], self.vdda_v_array[1][:self.array_index], autoDownsample=True)
@@ -357,17 +371,21 @@ class TelescopeStatus(Receiver):
                 self.vddd_c.setData(self.vddd_c_array[0][:self.array_index], self.vddd_c_array[1][:self.array_index], autoDownsample=True)
                 self.m26_v.setData(self.m26_v_array[0][:self.array_index], self.m26_v_array[1][:self.array_index], autoDownsample=True)
                 self.m26_c.setData(self.m26_c_array[0][:self.array_index], self.m26_c_array[1][:self.array_index], autoDownsample=True)
+            
+            # if arrays are full, shift arrays one to the right and add new data at the beginning of array
+            elif self.array_index >= self.array_size[1]:
                 
-                self.array_index += 1
+                # update time axes
+                for array in self.all_arrays:
+                    array[0][self.update_time_index] = now
                 
-            else: # if arrays are full, shift arrays one to the left and add new data at the end of array
-                
-                self.vdda_v_array = shift_data(self.vdda_v_array, data['status']['vdda_v'][0], data['status']['time'][0])
-                self.vdda_c_array = shift_data(self.vdda_c_array, data['status']['vdda_c'][0], data['status']['time'][0])
-                self.vddd_v_array = shift_data(self.vddd_v_array, data['status']['vddd_v'][0], data['status']['time'][0])
-                self.vddd_c_array = shift_data(self.vddd_c_array, data['status']['vddd_c'][0], data['status']['time'][0])
-                self.m26_v_array = shift_data(self.m26_v_array, data['status']['m26_voltage'][0], data['status']['time'][0])
-                self.m26_c_array = shift_data(self.m26_c_array, data['status']['m26_current'][0], data['status']['time'][0])
+                # set new data array by shifting old one; input are has shape=self.array_size, output has shape=(1,self.array_size[1])
+                self.vdda_v_array[1] = shift_data(self.vdda_v_array, data['status']['vdda_v'][0])
+                self.vdda_c_array[1] = shift_data(self.vdda_c_array, data['status']['vdda_c'][0])
+                self.vddd_v_array[1] = shift_data(self.vddd_v_array, data['status']['vddd_v'][0])
+                self.vddd_c_array[1] = shift_data(self.vddd_c_array, data['status']['vddd_c'][0])
+                self.m26_v_array[1] = shift_data(self.m26_v_array, data['status']['m26_v'][0])
+                self.m26_c_array[1] = shift_data(self.m26_c_array, data['status']['m26_c'][0])
                 
                 # set plot data
                 self.vdda_v.setData(self.vdda_v_array[0], self.vdda_v_array[1], autoDownsample=True)
@@ -376,3 +394,9 @@ class TelescopeStatus(Receiver):
                 self.vddd_c.setData(self.vddd_c_array[0], self.vddd_c_array[1], autoDownsample=True)
                 self.m26_v.setData(self.m26_v_array[0], self.m26_v_array[1], autoDownsample=True)
                 self.m26_c.setData(self.m26_c_array[0], self.m26_c_array[1], autoDownsample=True)
+                
+                # update the index used after we once filled the arrays
+                self.update_time_index += 1
+            
+            # update the index that indicates whenever we shifted through 
+            self.array_index += 1

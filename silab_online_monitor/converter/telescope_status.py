@@ -19,10 +19,7 @@ class TelescopeStatus(Transceiver):
         self.tel_stat_tab = 'Telescope_Status'  # store name (str) of Telescope_Status tab
         
         # array for status data
-        self.status_data = np.zeros(shape=(1), dtype=[('time','f8'),('m26_voltage','f4'),('m26_current','f4'),('vdda_v','f4'),('vdda_c','f4'),('vddd_v','f4'),('vddd_c','f4')])
-    
-        # start timer
-        self.start_time = time.time()
+        self.status_data = np.zeros(shape=(1), dtype=[('m26_v','f4'),('m26_c','f4'),('vdda_v','f4'),('vdda_c','f4'),('vddd_v','f4'),('vddd_c','f4')])
         
     def deserialze_data(self, data):  # According to pyBAR data serilization
         datar, meta = utils.simple_dec(data)
@@ -43,13 +40,9 @@ class TelescopeStatus(Transceiver):
         This works if with each meta_data we get one value for each scan_parameter (which is correct i guess)
         '''
         
-        # get time passed since converter was started
-        now = time.time() - self.start_time
-        self.status_data['time'] = now
-        
         # simulate data for testing
-        self.status_data['m26_current'] = np.random.uniform(3.0,3.31)
-        self.status_data['m26_voltage'] = np.random.uniform(8.0,8.31)
+        self.status_data['m26_c'] = np.random.uniform(3.0,3.31)
+        self.status_data['m26_v'] = np.random.uniform(8.0,8.31)
         self.status_data['vdda_v'] = np.random.uniform(1.5,1.31)
         self.status_data['vddd_v'] = np.random.uniform(1.2,1.31)
         self.status_data['vdda_c'] = np.random.uniform(0.3,0.35)

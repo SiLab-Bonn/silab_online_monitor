@@ -1,7 +1,7 @@
 producer_sim :
     DAQ0 :
         kind : pybar_fei4
-        delay : 0.1
+        delay : 0.028
         backend: tcp://127.0.0.1:5500
 #       path to your h5-file
         data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/122_test_m26_telescope_scan.h5
