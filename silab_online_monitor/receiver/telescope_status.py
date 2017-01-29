@@ -3,20 +3,16 @@ from zmq.utils import jsonapi
 import numpy as np
 import time
 
-import PyQt5 as pqt5
-from PyQt5 import Qt
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
-import pyqtgraph.ptime as ptime
 from pyqtgraph.dockarea import DockArea, Dock
 
 from online_monitor.utils import utils
-from PyQt5.Qt import QWidget, QSize
 
 
 class TelescopeStatus(Receiver):
-
     def setup_receiver(self):
+
         self.set_bidirectional_communication()  # We want to change converter settings
 
     def setup_widgets(self, parent, name):
@@ -28,12 +24,9 @@ class TelescopeStatus(Receiver):
         # add status tab to online monitor
         dock_area = DockArea()
         parent.addTab(dock_area, name)
-        # send active tab index to converter so that it only does something when
-        # user is looking at corresponding receiver
-        parent.currentChanged.connect(
-            lambda value: self.send_command(
-                'ACTIVETAB %s' % str(
-                    parent.tabText(value))))
+
+        # send active tab index to converter so it only does something when user is looking at corresponding receiver
+        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %s' % str(parent.tabText(value))))
 
         # add status docks
         dock_status_m26 = Dock("Mimosa Status")
@@ -235,48 +228,48 @@ class TelescopeStatus(Receiver):
         # complicated approach with two y axis for m26 v and c
 
         # add plot with two axes for volatge and current
-#        plot_graphics_m26 = pg.GraphicsView()
-#        plot_graphics_m26.show()
-#        plot_layout = pg.GraphicsLayout()
-#        plot_graphics_m26.setCentralWidget(plot_layout)
-#        axis_current = pg.AxisItem("left")
-#        plot_layout.addItem(axis_current, row = 2, col = 5,  rowspan=1, colspan=1)
-#        view_current = pg.ViewBox()
-#        self.plot_current = pg.PlotItem(viewBox=view_current)
-#        view_voltage = pg.ViewBox()
-#        self.plot_voltage = pg.PlotItem(viewBox=view_voltage)
-#        plot_layout.addItem(self.plot_voltage, row = 2, col = 6,  rowspan=1, colspan=1) # add plotitem to layout
-#        plot_layout.scene().addItem(view_current)
-#        view_current.disableAutoRange(axis=view_current.YAxis)
-#        axis_current.linkToView(view_current)
-#        view_current.setXLink(view_voltage)
-#        view_current.setBackgroundColor('#545454')
-#        self.plot_voltage.getAxis("left").setLabel('Voltage / V')
-#        self.plot_voltage.getAxis("bottom").setLabel('Time / s')
-#        self.plot_voltage.addLegend(offset=(20,20))
-#        self.plot_current.addLegend(offset=(120,20))
-#        voltage_pen = QtGui.QPen()
-#        voltage_pen.setStyle(QtCore.Qt.SolidLine)
-#        voltage_pen.setWidthF(1)
-#        current_pen = QtGui.QPen()
-#        current_pen.setStyle(QtCore.Qt.DashLine)
-#        current_pen.setWidthF(1)
-#        self.plot_voltage.getAxis('left').setPen(voltage_pen)
-#        self.plot_voltage.getAxis('left').setGrid(155)
-#        axis_current.setPen(current_pen)
-#        axis_current.setGrid(155)
-#        view_voltage.setLimits(minYRange=1)
-#        view_current.setLimits(minYRange=10)
-#        axis_current.setLabel('Current / mA')
-#        dock_m26.addWidget(plot_graphics_m26)
-#
-#        # update view
-#        def update_views():
-#            view_current.setGeometry(view_voltage.sceneBoundingRect())
-#
-#        # update view when viewbox was scaled
-#        view_voltage.sigResized.connect(update_views)
-#        view_current.enableAutoRange(axis= pg.ViewBox.XYAxes, enable=True)
+        #        plot_graphics_m26 = pg.GraphicsView()
+        #        plot_graphics_m26.show()
+        #        plot_layout = pg.GraphicsLayout()
+        #        plot_graphics_m26.setCentralWidget(plot_layout)
+        #        axis_current = pg.AxisItem("left")
+        #        plot_layout.addItem(axis_current, row = 2, col = 5,  rowspan=1, colspan=1)
+        #        view_current = pg.ViewBox()
+        #        self.plot_current = pg.PlotItem(viewBox=view_current)
+        #        view_voltage = pg.ViewBox()
+        #        self.plot_voltage = pg.PlotItem(viewBox=view_voltage)
+        #        plot_layout.addItem(self.plot_voltage, row = 2, col = 6,  rowspan = 1, colspan = 1)
+        #        plot_layout.scene().addItem(view_current)
+        #        view_current.disableAutoRange(axis=view_current.YAxis)
+        #        axis_current.linkToView(view_current)
+        #        view_current.setXLink(view_voltage)
+        #        view_current.setBackgroundColor('#545454')
+        #        self.plot_voltage.getAxis("left").setLabel('Voltage / V')
+        #        self.plot_voltage.getAxis("bottom").setLabel('Time / s')
+        #        self.plot_voltage.addLegend(offset=(20,20))
+        #        self.plot_current.addLegend(offset=(120,20))
+        #        voltage_pen = QtGui.QPen()
+        #        voltage_pen.setStyle(QtCore.Qt.SolidLine)
+        #        voltage_pen.setWidthF(1)
+        #        current_pen = QtGui.QPen()
+        #        current_pen.setStyle(QtCore.Qt.DashLine)
+        #        current_pen.setWidthF(1)
+        #        self.plot_voltage.getAxis('left').setPen(voltage_pen)
+        #        self.plot_voltage.getAxis('left').setGrid(155)
+        #        axis_current.setPen(current_pen)
+        #        axis_current.setGrid(155)
+        #        view_voltage.setLimits(minYRange=1)
+        #        view_current.setLimits(minYRange=10)
+        #        axis_current.setLabel('Current / mA')
+        #        dock_m26.addWidget(plot_graphics_m26)
+        #
+        #        # update view
+        #        def update_views():
+        #            view_current.setGeometry(view_voltage.sceneBoundingRect())
+        #
+        #        # update view when viewbox was scaled
+        #        view_voltage.sigResized.connect(update_views)
+        #        view_current.enableAutoRange(axis= pg.ViewBox.XYAxes, enable=True)
 
         # add dock for FE-I4 power supply
         dock_fei4 = Dock("FE-I4 power supply")
@@ -363,48 +356,22 @@ class TelescopeStatus(Receiver):
         self.reset_fei4_vddd.clicked.connect(lambda: self.send_command('RESET_FEI4_VDDD'))
 
         # add dict of all used plotcurveitems for individual handling of each plot
-        self.plots = {
-            'm26_c': self.m26_c,
-            'm26_v': self.m26_v,
-            'vdda_c': self.vdda_c,
-            'vdda_v': self.vdda_v,
-            'vddd_c': self.vddd_c,
-            'vddd_v': self.vddd_v}
-        self.maxima = {
-            'm26_c': self.m26_c_max,
-            'm26_v': self.m26_v_max,
-            'vdda_c': self.vdda_c_max,
-            'vdda_v': self.vdda_v_max,
-            'vddd_c': self.vddd_c_max,
-            'vddd_v': self.vddd_v_max}
-        self.minima = {
-            'm26_c': self.m26_c_min,
-            'm26_v': self.m26_v_min,
-            'vdda_c': self.vdda_c_min,
-            'vdda_v': self.vdda_v_min,
-            'vddd_c': self.vddd_c_min,
-            'vddd_v': self.vddd_v_min}
-        self.max_values = {
-            'm26_c': 0,
-            'm26_v': 0,
-            'vdda_c': 0,
-            'vdda_v': 0,
-            'vddd_c': 0,
-            'vddd_v': 0}
-        self.min_values = {
-            'm26_c': 0,
-            'm26_v': 0,
-            'vdda_c': 0,
-            'vdda_v': 0,
-            'vddd_c': 0,
-            'vddd_v': 0}
-        self.QLCD_displays = {
-            'm26_c': self.current_m26_c,
-            'm26_v': self.current_m26_v,
-            'vdda_c': self.current_vdda_c,
-            'vdda_v': self.current_vdda_v,
-            'vddd_c': self.current_vddd_c,
-            'vddd_v': self.current_vddd_v}
+        self.plots = {'m26_c': self.m26_c, 'm26_v': self.m26_v, 'vdda_c': self.vdda_c,
+                      'vdda_v': self.vdda_v, 'vddd_c': self.vddd_c, 'vddd_v': self.vddd_v}
+
+        self.maxima = {'m26_c': self.m26_c_max, 'm26_v': self.m26_v_max, 'vdda_c': self.vdda_c_max,
+                       'vdda_v': self.vdda_v_max, 'vddd_c': self.vddd_c_max, 'vddd_v': self.vddd_v_max}
+
+        self.minima = {'m26_c': self.m26_c_min, 'm26_v': self.m26_v_min, 'vdda_c': self.vdda_c_min,
+                       'vdda_v': self.vdda_v_min, 'vddd_c': self.vddd_c_min, 'vddd_v': self.vddd_v_min}
+
+        self.max_values = {'m26_c': 0, 'm26_v': 0, 'vdda_c': 0, 'vdda_v': 0, 'vddd_c': 0, 'vddd_v': 0}
+
+        self.min_values = {'m26_c': 0, 'm26_v': 0, 'vdda_c': 0, 'vdda_v': 0, 'vddd_c': 0, 'vddd_v': 0}
+
+        self.QLCD_displays = {'m26_c': self.current_m26_c, 'm26_v': self.current_m26_v,
+                              'vdda_c': self.current_vdda_c, 'vdda_v': self.current_vdda_v,
+                              'vddd_c': self.current_vddd_c, 'vddd_v': self.current_vddd_v}
 
         # add min_max_dock
         dock_min_max_vals = Dock("min./max.\n values")
@@ -429,8 +396,9 @@ class TelescopeStatus(Receiver):
         self.min_max_table.setRowCount(1)
         self.min_max_table.setColumnCount(6)
         self.min_max_table.setVerticalHeaderLabels(['min./max. values:'])
-        self.min_max_table.setHorizontalHeaderLabels(
-            ['M26_voltage', 'M26_current', 'VDDA_voltage', 'VDDA_current', 'VDDD_voltage', 'VDDD_current'])
+        self.min_max_table.setHorizontalHeaderLabels(['M26_voltage', 'M26_current',
+                                                      'VDDA_voltage', 'VDDA_current',
+                                                      'VDDD_voltage', 'VDDD_current'])
         self.min_max_table.showGrid()
         self.font = QtGui.QFont()
         self.font.setPointSize(12)
@@ -463,96 +431,104 @@ class TelescopeStatus(Receiver):
         dock_area.addDock(dock_min_max_vals, 'bottom')
 
     def deserialze_data(self, data):
+
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def handle_data(self, data):
-        
+
         # status data has this keyword
         if 'status' in data:
-            
+
             # update QLCDDisplays every second with latest entry of each data
-            if time.time()-self.start_time >= self.count_seconds:
-                
+            if time.time() - self.start_time >= self.count_seconds:
+
                 for key in data['status']:
-                    
                     self.QLCD_displays[key].display(format(data['status'][key][1][0], '.3f'))
-                    
-                    #~ # three decimal places for vdda/vdda currents
-                    #~ if key == 'vdda_c' or key == 'vddd_c':
-                        #~ self.QLCD_displays[key].display(format(data['status'][key][1][0], '.3f'))
-                        
-                    #~ # two decimal places for the rest
-                    #~ else:
-                        #~ self.QLCD_displays[key].display(format(data['status'][key][1][0], '.2f'))
-                
+
+                    # ~ # three decimal places for vdda/vdda currents
+                    # ~ if key == 'vdda_c' or key == 'vddd_c':
+                    # ~ self.QLCD_displays[key].display(format(data['status'][key][1][0], '.3f'))
+
+                    # ~ # two decimal places for the rest
+                    # ~ else:
+                    # ~ self.QLCD_displays[key].display(format(data['status'][key][1][0], '.2f'))
+
                 self.count_seconds += 1.0
-            
+
             # add temporary copy of min and max values to check whether they changed in new data
             tmp_max_values = self.max_values.copy()
             tmp_min_values = self.min_values.copy()
-           
+
             # fill plots
             for key in data['status']:
-                
+
                 # if array not full, plot data only up to current array_index, 'indices' is keyword
                 if data['indices'][key] < data['status'][key].shape[1]:
-                    
-                    # set the plot data to the corresponding arrays where only the the values up to self.array_index are plotted
-                    self.plots[key].setData(data['status'][key][0][:data['indices'][key]], data['status'][key][1][:data['indices'][key]], autoDownsample=True)
-                    
+
+                    # set the plot data up to self.array_index to the corresponding arrays
+                    self.plots[key].setData(data['status'][key][0][:data['indices'][key]],
+                                            data['status'][key][1][:data['indices'][key]],
+                                            autoDownsample=True)
+
                     # check if max value of current data is bigger than last max value
                     if self.max_values[key] < np.amax(data['status'][key][1][:data['indices'][key]]):
-                        
+
                         self.max_values[key] = np.amax(data['status'][key][1][:data['indices'][key]])
-                        
+
                     # check if min value of current data is smaller than last min value
                     elif self.min_values[key] == 0 or self.min_values[key] > np.amin(data['status'][key][1][:data['indices'][key]]):
-                        
+
                         self.min_values[key] = np.amin(data['status'][key][1][:data['indices'][key]])
-                    
+
                 # if array full, plot entire array
                 elif data['indices'][key] >= data['status'][key].shape[1]:
-                    
+
                     # set the plot data to the corresponding arrays
                     self.plots[key].setData(data['status'][key][0], data['status'][key][1], autoDownsample=True)
-                    
+
                     # check if max value of current data is bigger than last max value
                     if self.max_values[key] < np.amax(data['status'][key][1]):
-                        
+
                         self.max_values[key] = np.amax(data['status'][key][1])
-                        
+
                     # check if min value of current data is smaller than last min value
                     elif self.min_values[key] == 0 or self.min_values[key] > np.amin(data['status'][key][1]):
-                        
+
                         self.min_values[key] = np.amin(data['status'][key][1])
-                
+
                 # update max min values in table only if values changed
                 if tmp_max_values[key] != self.max_values[key] or tmp_min_values[key] != self.min_values[key]:
-                    
+
                     # loop over table header indices
-                    for i in range(0,self.min_max_table.columnCount()):
-                        
+                    for i in range(0, self.min_max_table.columnCount()):
+
                         # get table header and creat tablewidgetitem
                         header = self.min_max_table.horizontalHeaderItem(i).text()
                         newItem = QtGui.QTableWidgetItem()
-                        #newItem.setFont(QtGui.QFont('Serif', 11, QtGui.QFont.Bold))
+                        # newItem.setFont(QtGui.QFont('Serif', 11, QtGui.QFont.Bold))
                         newItem.setFont(self.font)
                         newItem.setTextAlignment(QtCore.Qt.AlignCenter)
-                        
+
                         # if data key is in header text
                         if key in header.lower():
-                            
+
                             # set text of tablewidgetitem; separate currents from voltages
                             if '_c' in key:
-                                newItem.setText(format(self.min_values[key], '.3f') + '  A  /  ' + format(self.max_values[key], '.3f') + '  A')
+
+                                newItem.setText(format(self.min_values[key], '.3f') + '  A  /  '
+                                                +
+                                                format(self.max_values[key], '.3f') + '  A')
                             elif '_v' in key:
-                                newItem.setText(format(self.min_values[key], '.3f') + '  V  /  ' + format(self.max_values[key], '.3f') + '  V')
-                            
+
+                                newItem.setText(format(self.min_values[key], '.3f') + '  V  /  '
+                                                +
+                                                format(self.max_values[key], '.3f') + '  V')
+
                             # set cell entry to min max value, then break
-                            self.min_max_table.setItem(0,i,newItem)
+                            self.min_max_table.setItem(0, i, newItem)
+
                             break
-                    
-                
+
                 # set max and min lines for each plot
                 self.maxima[key].setValue(self.max_values[key])
                 self.minima[key].setValue(self.min_values[key])

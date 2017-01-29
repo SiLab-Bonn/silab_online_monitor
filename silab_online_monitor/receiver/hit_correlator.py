@@ -1,42 +1,40 @@
 from online_monitor.receiver.receiver import Receiver
 from zmq.utils import jsonapi
 import numpy as np
-import time
 
 from PyQt5 import Qt
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
-import pyqtgraph.ptime as ptime
+from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import DockArea, Dock
 
-
 from online_monitor.utils import utils
-from PyQt5.Qt import QWidget, QSize
 
 
 class HitCorrelator(Receiver):
 
     def setup_receiver(self):
+
         self.set_bidirectional_communication()  # We want to change converter settings
 
     def setup_widgets(self, parent, name):
-        #
+
         self.occupancy_images_columns = {}
         self.occupancy_images_rows = {}
-        #
+
         DUTS = []
-        #
+
         for dut_index in range(7):
 
             if dut_index == 0:
                 DUTS.append('FE-I4')
             else:
                 DUTS.append('MIMOSA %i' % dut_index)
-        #
+
         dock_area = DockArea()
         parent.addTab(dock_area, name)
-        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %s' % str(parent.tabText(value))))  # send active tab index to converter so that it only does something when user is looking at corresponding receiver
-        #
+        # send active tab index to converter so it only does something when user is looking at corresponding receiver
+        parent.currentChanged.connect(lambda value: self.send_command('ACTIVETAB %s' % str(parent.tabText(value))))
+
         dock_status = Dock("status")
         dock_status.setMinimumSize(400, 90)
         dock_status.setMaximumHeight(110)
@@ -47,7 +45,7 @@ class HitCorrelator(Receiver):
         dock_corr_column.setMinimumSize(400, 400)
         dock_corr_row = Dock('Row-correlation')
         dock_corr_row.setMinimumSize(400, 400)
-        #
+
         cb = QtGui.QWidget()
         layout0 = QtGui.QGridLayout()
         cb.setLayout(layout0)
@@ -79,7 +77,7 @@ class HitCorrelator(Receiver):
         self.combobox2.activated.connect(lambda value: self.send_command('combobox2 %d' % value))
         self.start_button.clicked.connect(lambda value: self.send_command('START %d' % value))
         self.stop_button.clicked.connect(lambda value: self.send_command('STOP %d' % value))
-        #
+
         cw = QtGui.QWidget()
         layout = QtGui.QGridLayout()
         cw.setLayout(layout)
@@ -109,7 +107,7 @@ class HitCorrelator(Receiver):
         self.transpose_checkbox.stateChanged.connect(lambda value: self.send_command('TRANSPOSE %d' % value))
         remove_background_checkbox.stateChanged.connect(lambda value: self.send_command('BACKGROUND %d' % value))
         remove_background_spinbox.valueChanged.connect(lambda value: self.send_command('PERCENTAGE %f' % value))
-        #
+
         # Add plot docks for column corr
         occupancy_graphics1 = pg.GraphicsLayoutWidget()
         occupancy_graphics1.show()
@@ -117,10 +115,10 @@ class HitCorrelator(Receiver):
         occupancy_img_col = pg.ImageItem(border='w')
         # color occupancy
         poss = np.array([0.0, 0.6, 1.0])
-        color = np.array([[25, 25, 112, 255], [173, 255, 47, 255], [255, 0, 0, 255]], dtype=np.ubyte)  # [RED,GREEN,BLUE,BLACK/WHITE]
+        color = np.array([[25, 25, 112, 255], [173, 255, 47, 255], [255, 0, 0, 255]], dtype=np.ubyte)
         mapp = pg.ColorMap(poss, color)
         lutt = mapp.getLookupTable(0.0, 1.0, 100)
-        #
+
         occupancy_img_col.setLookupTable(lutt, update=True)
         # make plotwidget with axis
         self.plot1 = pg.PlotWidget(viewBox=view1)  # ,labels={'left': 'Column','bottom':'Column'})
@@ -153,6 +151,7 @@ class HitCorrelator(Receiver):
         def scale_and_label_axes(scale_state, dut1, dut2, dut1_name, dut2_name, transpose_state):
 
             if scale_state == 0:
+
                 # scaling
                 self.plot1.getAxis('bottom').setScale(1.0)
                 self.plot1.getAxis('left').setScale(1.0)
@@ -162,13 +161,17 @@ class HitCorrelator(Receiver):
                 self.plot1.getAxis('left').setTickSpacing()
                 self.plot2.getAxis('bottom').setTickSpacing()
                 self.plot2.getAxis('left').setTickSpacing()
+
                 # labeling
                 if dut1 == 0 and dut2 != 0:
 
                     if transpose_state == 0:
+
                         self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Rows')
                         self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Columns')
+
                     elif transpose_state == 2:
+
                         self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns')
                         self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows')
 
@@ -178,9 +181,12 @@ class HitCorrelator(Receiver):
                 elif dut1 != 0 and dut2 == 0:
 
                     if transpose_state == 0:
+
                         self.plot1.getAxis('left').setLabel(text=dut2_name + ' Rows')
                         self.plot2.getAxis('left').setLabel(text=dut2_name + ' Columns')
+
                     elif transpose_state == 2:
+
                         self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns')
                         self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows')
 
@@ -195,26 +201,33 @@ class HitCorrelator(Receiver):
                     self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows')
 
             elif scale_state == 2:
+
                 # scaling and labeling
                 if dut1 == 0 and dut2 != 0:
 
                     if transpose_state == 0:
+
                         self.plot1.getAxis('bottom').setScale(50.0)
                         self.plot2.getAxis('bottom').setScale(250.0)
                         self.plot2.getAxis('bottom').setTickSpacing(major=2000, minor=500)
+
                         # label
                         self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC' + 'm')
                         self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC' + 'm')
+
                     elif transpose_state == 2:
+
                         self.plot1.getAxis('bottom').setScale(250.0)
                         self.plot2.getAxis('bottom').setScale(50.0)
                         self.plot1.getAxis('bottom').setTickSpacing(major=2000, minor=500)
+
                         # label
                         self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC' + 'm')
                         self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC' + 'm')
 
                     self.plot1.getAxis('left').setScale(18.4)
                     self.plot2.getAxis('left').setScale(18.4)
+
                     # label
                     self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC' + 'm')
                     self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC' + 'm')
@@ -222,35 +235,43 @@ class HitCorrelator(Receiver):
                 elif dut1 != 0 and dut2 == 0:
 
                     if transpose_state == 0:
+
                         self.plot1.getAxis('left').setScale(50.0)
                         self.plot2.getAxis('left').setScale(250.0)
                         self.plot2.getAxis('left').setTickSpacing(major=2000, minor=500)
+
                         # label
                         self.plot1.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC' + 'm')
                         self.plot2.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC' + 'm')
+
                     elif transpose_state == 2:
                         self.plot1.getAxis('left').setScale(50.0)
                         self.plot2.getAxis('left').setScale(250.0)
                         self.plot2.getAxis('left').setTickSpacing(major=2000, minor=500)
+
                         # label
                         self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC' + 'm')
                         self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC' + 'm')
 
                     self.plot1.getAxis('bottom').setScale(18.4)
                     self.plot2.getAxis('bottom').setScale(18.4)
+
                     # label
                     self.plot1.getAxis('bottom').setLabel(text=dut1_name + ' Columns / ' + u'\u03BC' + 'm')
                     self.plot2.getAxis('bottom').setLabel(text=dut1_name + ' Rows / ' + u'\u03BC' + 'm')
 
                 else:
                     if dut1 == 0 and dut2 == 0:
+
                         self.plot1.getAxis('bottom').setScale(250.0)
                         self.plot2.getAxis('bottom').setScale(50.0)
                         self.plot1.getAxis('left').setScale(250.0)
                         self.plot2.getAxis('left').setScale(50.0)
                         self.plot1.getAxis('bottom').setTickSpacing(major=2000, minor=500)
                         self.plot1.getAxis('left').setTickSpacing(major=2000, minor=500)
+
                     elif dut1 != 0 and dut2 != 0:
+
                         self.plot1.getAxis('bottom').setScale(18.4)
                         self.plot2.getAxis('bottom').setScale(18.4)
                         self.plot1.getAxis('left').setScale(18.4)
@@ -261,21 +282,54 @@ class HitCorrelator(Receiver):
                     self.plot1.getAxis('left').setLabel(text=dut2_name + ' Columns / ' + u'\u03BC' + 'm')
                     self.plot2.getAxis('left').setLabel(text=dut2_name + ' Rows / ' + u'\u03BC' + 'm')
 
-        self.convert_checkbox.stateChanged.connect(lambda value: scale_and_label_axes(value, self.combobox1.currentIndex(), self.combobox2.currentIndex(), self.combobox1.currentText(), self.combobox2.currentText(), self.transpose_checkbox.checkState()))
-        self.combobox1.activated.connect(lambda value: scale_and_label_axes(self.convert_checkbox.checkState(), value, self.combobox2.currentIndex(), self.combobox1.currentText(), self.combobox2.currentText(), self.transpose_checkbox.checkState()))
-        self.combobox2.activated.connect(lambda value: scale_and_label_axes(self.convert_checkbox.checkState(), self.combobox1.currentIndex(), value, self.combobox1.currentText(), self.combobox2.currentText(), self.transpose_checkbox.checkState()))
-        self.transpose_checkbox.stateChanged.connect(lambda value: scale_and_label_axes(self.convert_checkbox.checkState(), self.combobox1.currentIndex(), self.combobox2.currentIndex(), self.combobox1.currentText(), self.combobox2.currentText(), value))
+        self.convert_checkbox.stateChanged.connect(lambda value:
+                                                   scale_and_label_axes(value,
+                                                                        self.combobox1.currentIndex(),
+                                                                        self.combobox2.currentIndex(),
+                                                                        self.combobox1.currentText(),
+                                                                        self.combobox2.currentText(),
+                                                                        self.transpose_checkbox.checkState()))
+
+        self.combobox1.activated.connect(lambda value:
+                                         scale_and_label_axes(self.convert_checkbox.checkState(),
+                                                              value,
+                                                              self.combobox2.currentIndex(),
+                                                              self.combobox1.currentText(),
+                                                              self.combobox2.currentText(),
+                                                              self.transpose_checkbox.checkState()))
+
+        self.combobox2.activated.connect(lambda value:
+                                         scale_and_label_axes(self.convert_checkbox.checkState(),
+                                                              self.combobox1.currentIndex(),
+                                                              value,
+                                                              self.combobox1.currentText(),
+                                                              self.combobox2.currentText(),
+                                                              self.transpose_checkbox.checkState()))
+
+        self.transpose_checkbox.stateChanged.connect(lambda value:
+                                                     scale_and_label_axes(self.convert_checkbox.checkState(),
+                                                                          self.combobox1.currentIndex(),
+                                                                          self.combobox2.currentIndex(),
+                                                                          self.combobox1.currentText(),
+                                                                          self.combobox2.currentText(),
+                                                                          value))
 
     def deserialze_data(self, data):
+
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 
     def handle_data(self, data):
 
         if 'meta_data' not in data:
+
             for key in data:
+
                 if 'column' == key:
+
                     self.occupancy_images_columns.setImage(data[key][:, :], autoDownsample=True)
+
                 if 'row' == key:
+
                     self.occupancy_images_rows.setImage(data[key][:, :], autoDownsample=True)
         else:
             self.rate_label.setText('Readout Rate: %d Hz' % data['meta_data']['fps'])

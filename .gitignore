@@ -60,6 +60,9 @@ target/
 .project
 .pydevproject
 
+# PyCharm files
+.idea/
+
 # temporary files
 *~
 /silab_online_monitor.bk/
