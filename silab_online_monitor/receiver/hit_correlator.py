@@ -14,7 +14,11 @@ class HitCorrelator(Receiver):
 
     def setup_receiver(self):
 
-        self.set_bidirectional_communication()  # We want to change converter settings
+        # We want to change converter settings
+        self.set_bidirectional_communication()
+
+        # Send name of Receiver Tab to converter to correlate only when looked at tab
+        self.send_command('RECEIVER %s' % self.name)
 
     def setup_widgets(self, parent, name):
 

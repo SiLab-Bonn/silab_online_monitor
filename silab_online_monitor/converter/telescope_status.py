@@ -83,7 +83,11 @@ class TelescopeStatus(Transceiver):
         if 'meta_data' in data[0][1]:
 
             meta_data = data[0][1]['meta_data']
-
+            scan_parameters = meta_data['scan_parameters']
+            
+            # for key in scan_parameters:
+                # print key, scan_parameters[key]
+            
             # FIXME: Timing only correct for real time data rate
             # only take one set of scan_parameters per timestamp
             if meta_data['timestamp_start'] <= self.prev_timestamp:

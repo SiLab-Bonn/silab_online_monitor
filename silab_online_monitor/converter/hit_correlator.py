@@ -17,7 +17,7 @@ class HitCorrelator(Transceiver):
 
         # variables to determine whether to do sth or not
         self.active_tab = None  # stores name (str) of active tab in online monitor
-        self.hit_corr_tab = 'Hit_Correlator'  # store name (str) of hit_correlator tab
+        self.hit_corr_tab = None  # store name (str) of hit_correlator tab FIXME: get name of receiver instead
         self.start_signal = 1  # will be set in handle_command function; correlation starts if this is set to 0
         # variables to store integer value of active duts
         self.active_dut1 = 0
@@ -308,22 +308,25 @@ class HitCorrelator(Transceiver):
 
         # commands
         if command[0] == 'RESET':
-
             reset()
 
-        # received signal is 'combobox1 value' where value is position of combobox 1; 0 ==fe, 1-6 == m26_1 -m26_6
+        # Get name of receiver's tab
+        elif 'RECEIVER' in command[0]:
+            self.hit_corr_tab = command[0].split()[1]
+
+        # Received signal is 'combobox1 value' where value is position of combobox 1; 0 ==fe, 1-6 == m26_1 -m26_6
         elif 'combobox1'in command[0]:
 
             self.active_dut1 = int(command[0].split()[1])
             get_hist_size(self.active_dut1, self.active_dut2, self.transpose)
 
-        # received signal is 'combobox2 value' where value is position of combobox 2; 0 ==fe, 1-6 == m26_1 -m26_6
+        # Received signal is 'combobox2 value' where value is position of combobox 2; 0 ==fe, 1-6 == m26_1 -m26_6
         elif 'combobox2'in command[0]:
 
             self.active_dut2 = int(command[0].split()[1])
             get_hist_size(self.active_dut1, self.active_dut2, self.transpose)
 
-        # first choose two telescope planes and then press start button to correlate
+        # First choose two telescope planes and then press start button to correlate
         elif 'START' in command[0]:
 
             self.start_signal = int(command[0].split()[1])
@@ -332,7 +335,7 @@ class HitCorrelator(Transceiver):
             print '\n'
             print '#######################', ' START ', '#######################\n'
 
-        # received signal is 'ACTIVETAB tab' where tab is the name (str) of the selected tab in online monitor
+        # Received signal is 'ACTIVETAB tab' where tab is the name (str) of the selected tab in online monitor
         elif 'ACTIVETAB' in command[0]:
 
             self.active_tab = str(command[0].split()[1])

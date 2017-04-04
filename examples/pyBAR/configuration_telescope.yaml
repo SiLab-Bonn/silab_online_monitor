@@ -5,6 +5,7 @@ producer_sim :
         delay : 0.028
         backend: tcp://127.0.0.1:5500
 #       path to your h5-file
+#       data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/94_test_m26_telescope_scan.h5
         data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/122_test_m26_telescope_scan.h5
 
 converter :
@@ -50,7 +51,7 @@ receiver :
     DUT1 :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:6700
-    Hit_Correlator :
+    HIT_Correlator :
         kind : hit_correlator
         frontend : tcp://127.0.0.1:7700
         devices :
