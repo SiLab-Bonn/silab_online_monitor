@@ -4,7 +4,9 @@ This python package contains specific implementations of converters and receiver
 
 So far the following systems are supported:
 
-- pyBAR with ALTLAS FE-I4 data
+- pyBAR with ALTLAS FE-I4 module data
+- pyBAR with Mimosa26 telescope data
+- pyBAR with FANGS BEAST stave data
 
 # Installation
 
