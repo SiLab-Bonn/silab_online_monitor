@@ -132,7 +132,9 @@ class TestOnlineMonitor(unittest.TestCase):
         data_received_0 = []
         self.app.processEvents()
         for receiver in self.online_monitor.receivers:
-            data_received_0.append(receiver.occupancy_img.getHistogram())
+            # Step has to be given to preven issue
+            # https://github.com/pyqtgraph/pyqtgraph/issues/469
+            data_received_0.append(receiver.occupancy_img.getHistogram(step=1))
         # Activate DUT widget, receiver 1 should show data
         self.online_monitor.tab_widget.setCurrentIndex(1)
         self.app.processEvents()
@@ -141,7 +143,7 @@ class TestOnlineMonitor(unittest.TestCase):
         time.sleep(0.2)
         data_received_1 = []
         for receiver in self.online_monitor.receivers:
-            data_received_1.append(receiver.occupancy_img.getHistogram())
+            data_received_1.append(receiver.occupancy_img.getHistogram(step=1))
         # Activate DUT widget, receiver 2 should show data
         self.online_monitor.tab_widget.setCurrentIndex(2)
         self.app.processEvents()
@@ -150,7 +152,7 @@ class TestOnlineMonitor(unittest.TestCase):
         time.sleep(1)
         data_received_2 = []
         for receiver in self.online_monitor.receivers:
-            data_received_2.append(receiver.occupancy_img.getHistogram())
+            data_received_2.append(receiver.occupancy_img.getHistogram(step=1))
 
         self.assertListEqual(data_received_0, [(None, None), (None, None)])
         self.assertTrue(data_received_1[0][0] is not None)
