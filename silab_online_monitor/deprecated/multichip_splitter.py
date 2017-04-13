@@ -37,42 +37,46 @@ class MultichipSplitter(Transceiver):
         if isinstance(data[0][1], dict):  # Meta data is saved in deserialze_data for next raw data send
             return
 
-        raw_data = data[0][1]
+        raw_data = data[0][1].copy()  
+        
+        # To be able to change data one has to copy it
+        if self.config.get('beast_tdc', False):
+            raw_data = raw_data.copy()
+        
         splitted_data = [None] * len(self.backends)
 
+        # Splits the data into seperate data streams
         for backend_index in range(len(self.backends)):
-
-            selection_frontend = np.bitwise_and(raw_data, 0xFF000000) == np.left_shift(backend_index + 1, 24)
-            selection_tdc = np.bitwise_and(raw_data, 0xF0000000) == np.left_shift(3 + 1, 28)
+            # Select FE data (FE words + TDC words)
+            
+            selection_frontend = np.bitwise_and(raw_data, 0x0F000000) == np.left_shift(backend_index + 1, 24) 
+            selection_tdc = np.bitwise_and(raw_data, 0x70000000) == np.left_shift(backend_index + 1, 28)
+            
+            if self.config.get('beast_tdc', False):
+     
+                raw_data[selection_tdc] = np.bitwise_and(raw_data[selection_tdc], 0x0FFFFFFF)
+                raw_data[selection_tdc] = np.bitwise_or(raw_data[selection_tdc], 0x40000000)
+            
+            # The trigger number is put into all data streams
             selection_trigger = np.bitwise_and(raw_data, 0x80000000) == np.left_shift(1, 31)
-
-#             select = np.greater(np.bitwise_and(raw_data, 0b01110000000000000000000000000000), 0)
-#             raw_data[select] = np.bitwise_and(raw_data[select], 0x0FFFFFFF)
-#             raw_data[select] = np.bitwise_or(raw_data[select], 0x10000000)
-
-
-#            print "selection_frontend", np.count_nonzero(selection_frontend)
-#            print "selection_frontend", raw_data[selection_frontend]
-#            print "selection_tdc", np.count_nonzero(selection_tdc)
-#            print "selection_tdc", raw_data[selection_tdc]
+#            print backend_index
+#             print np.count_nonzero(selection_tdc)z
+            
             selection = np.logical_or(np.logical_or(selection_frontend, selection_tdc), selection_trigger)
-
-#            print "selection", np.count_nonzero(selection)
-#            print "selection", raw_data[selection]
-            splitted_data[backend_index] = raw_data[selection]
-#            print "selection" , splitted_data
+            splitted_data[backend_index] = raw_data[selection]            
+            
         return splitted_data
-
+        
     def serialze_data(self, data):
         return np.zeros(10)
-        # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
+        #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
         if 'hits' in data:
-            hits_data = data['hits']
+            hits_data  = data['hits']
             data['hits'] = None
             return utils.simple_enc(hits_data, data)
         else:
             return utils.simple_enc(None, data)
-
+        
     def send_data(self, data):  # This function sends for each iterable in data the data over the corresponding backend in pyBAR style
         for backend_index, frontend_data in enumerate(data):
             data_meta_data = self.meta_data
