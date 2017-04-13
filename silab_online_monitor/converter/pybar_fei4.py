@@ -37,6 +37,8 @@ class PybarFEI4(Transceiver):
             data[0][1]['meta_data'].update({'n_hits': self.interpreter.get_n_hits(), 'n_events': self.interpreter.get_n_events()})
             return [data[0][1]]
 
+        # For the summing of histograms the histogrammer converter is used
+        self.interpreter.reset_histograms()
         self.interpreter.interpret_raw_data(data[0][1])
 
         interpreted_data = {
@@ -47,7 +49,6 @@ class PybarFEI4(Transceiver):
             'trigger_error_counters': self.interpreter.get_trigger_error_counters(),
         }
 
-        self.interpreter.reset_histograms()  # For the summing of histograms the histogrammer converter is used
         return [interpreted_data]
 
     def serialze_data(self, data):
