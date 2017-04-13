@@ -3,23 +3,46 @@ producer_sim :
         kind : pybar_fei4
         delay : 0.1
         backend: tcp://127.0.0.1:5500
-        data_file: /home/leloup/git/silab_online_monitor/examples/pyBAR/data_2chips_patrick.h5
+        data_file: /home/nandita/Data_testbeam/mnt/data/data_test_beam/data/tb_7/module_test_01/82_module_test_01_ext_trigger_scan.h5
+        
+    DAQ1 :
+        kind : pybar_fei4
+        delay : 0.1
+        backend: tcp://127.0.0.1:5501
+        data_file: /home/nandita/Data_testbeam/mnt/data/data_test_beam/data/tb_7/module_test_02/82_module_test_02_ext_trigger_scan.h5
+    DAQ2 :
+        kind : pybar_fei4
+        delay : 0.1
+        backend: tcp://127.0.0.1:5502
+        data_file: /home/nandita/Data_testbeam/mnt/data/data_test_beam/data/tb_7/module_test_03/82_module_test_03_ext_trigger_scan.h5
+    DAQ3 :
+        kind : pybar_fei4
+        delay : 0.1
+        backend: tcp://127.0.0.1:5503
+        data_file: /home/nandita/Data_testbeam/mnt/data/data_test_beam/data/tb_7/module_test_04/82_module_test_04_ext_trigger_scan.h5
+    DAQ4 :
+        kind : pybar_fei4
+        delay : 0.1
+        backend: tcp://127.0.0.1:5504
+        data_file: /home/nandita/Data_testbeam/mnt/data/data_test_beam/data/tb_7/module_test_05/82_module_test_05_ext_trigger_scan.h5
 # Change the Front End IP address of the splitter to DAQ's and comment out producer_sim to get data from the chip
 
 converter :
-    Splitter_Stave_1 :
-        kind : multichip_splitter
-        frontend : tcp://127.0.0.1:5500
-        backend : 
-          - tcp://127.0.0.1:5600
-          - tcp://127.0.0.1:5601
-          - tcp://127.0.0.1:5602
-          - tcp://127.0.0.1:5603
-          - tcp://127.0.0.1:5604
+#     Splitter_Stave_1 :
+#         kind : multichip_splitter
+# #        frontend : tcp://127.0.0.1:5500
+#         frontend : tcp://127.0.0.1:5678
+#         beast_tdc : True
+#         backend : 
+#           - tcp://127.0.0.1:5600
+#           - tcp://127.0.0.1:5601
+#           - tcp://127.0.0.1:5602
+#           - tcp://127.0.0.1:5603
+#           - tcp://127.0.0.1:5604
           
     DUT0_Int :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:5600
+        frontend : tcp://127.0.0.1:5500
         backend : tcp://127.0.0.1:5700
 #     DUT0_Hist :
 #         kind : pybar_fei4_histogrammer
@@ -28,7 +51,7 @@ converter :
         
     DUT1_Int :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:5601
+        frontend : tcp://127.0.0.1:5501
         backend : tcp://127.0.0.1:5701
 #     DUT1_Hist :
 #         kind : pybar_fei4_histogrammer
@@ -37,7 +60,7 @@ converter :
     
     DUT2_Int :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:5602
+        frontend : tcp://127.0.0.1:5502
         backend : tcp://127.0.0.1:5702
 #     DUT2_Hist :
 #         kind : pybar_fei4_histogrammer
@@ -46,7 +69,7 @@ converter :
     
     DUT3_Int :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:5603
+        frontend : tcp://127.0.0.1:5503
         backend : tcp://127.0.0.1:5703
 #     DUT3Hist :
 #         kind : pybar_fei4_histogrammer
@@ -55,7 +78,7 @@ converter :
         
     DUT4_Int :
         kind : pybar_fei4
-        frontend : tcp://127.0.0.1:5604
+        frontend : tcp://127.0.0.1:5504
         backend : tcp://127.0.0.1:5704
 #     DUT4_Hist :
 #         kind : pybar_fei4_histogrammer
@@ -75,8 +98,8 @@ converter :
 
 receiver :        
         
-    BEAST_Receiver_1:
-        kind : beast2
+    Receiver 1:
+        kind : beast_hitmap
         frontend : tcp://127.0.0.1:1300
       
     Receiver 2:
