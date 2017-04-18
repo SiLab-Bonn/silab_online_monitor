@@ -74,8 +74,8 @@ class BeastHistogrammer(Transceiver):
         for actual_device_data in data:  # Loop over all devices of actual received data which is type 'list'
             frontend_name, frontend_data = actual_device_data  # type of actual_device_data is 'tuple' of frontend_name and it's data, where data is frontend_data and type 'dict'
             frontend_index = frontend_name_to_fe_index(self, frontend_name)
-            recent_total_hits = [0, 0, 0, 0, 0]
-            recent_total_events = [0, 0, 0, 0, 0]
+            self.recent_total_hits = [0, 0, 0, 0, 0]
+            self.recent_total_events = [0, 0, 0, 0, 0]
             recent_time = [0, 0, 0, 0, 0]
             recent_fps = [0, 0, 0, 0, 0]
             recent_hps = [0, 0, 0, 0, 0]
@@ -106,20 +106,20 @@ class BeastHistogrammer(Transceiver):
                 t = time.time()-self.start
                 
                 # Get current readout data
-                recent_total_hits[frontend_index] = meta_data['n_hits']
-                recent_total_events[frontend_index] = meta_data['n_events']
+                self.recent_total_hits[frontend_index] = meta_data['n_hits']
+                self.recent_total_events[frontend_index] = meta_data['n_events']
                 recent_time[frontend_index] = meta_data['timestamp_start']
                 
                 # Calculate actual readout rates
                 recent_fps[frontend_index] = 1.0 / (recent_time[frontend_index] - self.time[frontend_index])
-                recent_eps[frontend_index] = (recent_total_events[frontend_index] - self.total_events[frontend_index]) / (recent_time[frontend_index] - self.time[frontend_index])
-                recent_hps[frontend_index] = (recent_total_hits[frontend_index] - self.total_hits[frontend_index]) / (recent_time[frontend_index] - self.time[frontend_index])   
+                recent_eps[frontend_index] = (self.recent_total_events[frontend_index] - self.total_events[frontend_index]) / (recent_time[frontend_index] - self.time[frontend_index])
+                recent_hps[frontend_index] = (self.recent_total_hits[frontend_index] - self.total_hits[frontend_index]) / (recent_time[frontend_index] - self.time[frontend_index])   
                 
                 # Update counter variables
                 self.time[frontend_index] = recent_time[frontend_index]
-                self.total_hits[frontend_index] = recent_total_hits[frontend_index]
-                self.total_events[frontend_index] = recent_total_events[frontend_index]
-                
+                self.total_hits[frontend_index] = self.recent_total_hits[frontend_index]
+                self.total_events[frontend_index] = self.recent_total_events[frontend_index]
+        
                 # Filter and update rate values
                 self.fps[frontend_index] = (self.fps[frontend_index] * 0.7 + recent_fps[frontend_index] * 0.3)
                 self.eps[frontend_index] = (self.eps[frontend_index] * 0.7 + recent_eps[frontend_index] * 0.3)
@@ -144,7 +144,7 @@ class BeastHistogrammer(Transceiver):
             if self.readout % self.n_readouts == 0:
                 for frontend_index in range(n_fes):
                     self.histogrammers[frontend_index].reset()
-                    self.tdc_counters[frontend_index] = np.zeros_like(self.tdc_counters)
+                    self.tdc_counters[frontend_index] = np.zeros(shape=(1, 4096), dtype=None)
                 self.readouts = 0
         
         
@@ -179,12 +179,16 @@ class BeastHistogrammer(Transceiver):
         if command[0] == 'RESET':
             for frontend_index in range(n_fes):
                 self.histogrammers[frontend_index].reset()
-                self.tdc_counters[frontend_index] = np.zeros_like(self.tdc_counters)
+                self.tdc_counters[frontend_index] = np.zeros(shape=(1, 4096), dtype=None)
             self.eps_array = np.zeros(shape=(1, n_fes), dtype=np.int32)
             self.hps_array = np.zeros(shape=(1, n_fes,), dtype=np.int32)
-            self.temp = [0.0]  
+            self.start = time.time()
+            self.temp = [0.0]
+            self.time = [0, 0, 0, 0, 0]
             self.total_hits = [0, 0, 0, 0, 0]
             self.total_events = [0, 0, 0, 0, 0]
+            #self.recent_total_events = [0, 0, 0, 0, 0]
+            #self.recent_total_hits = [0, 0, 0, 0, 0]
            
         else:
             self.n_readouts = int(command[0])
