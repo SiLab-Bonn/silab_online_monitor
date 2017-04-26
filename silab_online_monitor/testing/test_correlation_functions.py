@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from silab_online_monitor.converter import correlation_functions
+from silab_online_monitor.tools import correlation_functions
 
 
 class TestCorrelation(unittest.TestCase):
