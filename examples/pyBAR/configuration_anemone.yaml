@@ -17,7 +17,7 @@ converter :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:5500
         backend : tcp://127.0.0.1:6600
-    HIT_Correlator : 
+    ANEMONE_Correlator :
         kind : anemone_correlator
         frontend : 
           - tcp://127.0.0.1:5600
@@ -51,7 +51,7 @@ receiver :
     DUT1 :
         kind : pybar_fei4
         frontend : tcp://127.0.0.1:6700
-    HIT_Correlator :
+    ANEMONE_Correlator :
         kind : anemone_correlator
         frontend : tcp://127.0.0.1:7700
         devices :

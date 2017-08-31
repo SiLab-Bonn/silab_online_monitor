@@ -12,7 +12,7 @@ from online_monitor.utils import utils
 
 
 @jit
-def noisy_calc(nparray):
+def hot_threshold_calc(nparray):
 
     # use np.ravel to flatten since it returns view and is much faster than flatten()
     a = nparray.ravel()
@@ -28,6 +28,27 @@ def noisy_calc(nparray):
     return np.mean(c), np.amax(c)
 
 
+# this cannot be used so far since the jitted function always only returns a view it seems
+# which causes a crash since the input array is cleared in the meantime
+@jit
+def hot_mask_calc(nparray, factor, upper_mean):
+
+    # get occupancy array with mask, dtype is np.MaskedArray
+    o = np.ma.masked_where(nparray > (factor * upper_mean), nparray)
+
+    # extract mask
+    m = np.ma.getmask(o)
+
+    # extract data from o
+    d = o.data
+
+    # set data to 0 wherever mask is True
+    d[m] = 0
+
+    # return masked data and mask
+    return d, m
+
+
 class HitCorrelator(Receiver):
 
     def setup_receiver(self):
@@ -40,7 +61,13 @@ class HitCorrelator(Receiver):
 
     def setup_widgets(self, parent, name):
 
-        self.rm_hot_pixels = False
+        self.mask_hot_pixels = False
+        self.have_mask_col = False
+        self.have_mask_row = False
+        self.mask_col = None
+        self.mask_row = None
+        self.hot_pixels_col = 0
+        self.hot_pixels_row = 0
 
         self.occupancy_image_columns = None
         self.occupancy_image_rows = None
@@ -110,16 +137,16 @@ class HitCorrelator(Receiver):
         reset_button.setMaximumSize(300, 30)
         layout.setHorizontalSpacing(25)
         layout.addWidget(reset_button, 0, 1, 0, 1)
-        rm_hot_pixels_checkbox = QtGui.QCheckBox('Remove hot pixels:')
-        layout.addWidget(rm_hot_pixels_checkbox, 0, 2, 1, 1)
-        rm_hot_pixels_spinbox = QtGui.QDoubleSpinBox()
-        rm_hot_pixels_spinbox.setRange(0.0, 100.0)
-        rm_hot_pixels_spinbox.setValue(7.0)
-        rm_hot_pixels_spinbox.setSingleStep(1.0)
-        rm_hot_pixels_spinbox.setDecimals(1)
-        rm_hot_pixels_spinbox.setPrefix('> ')
-        rm_hot_pixels_spinbox.setSuffix(' x avg. center occupancy')
-        layout.addWidget(rm_hot_pixels_spinbox, 0, 3, 1, 1)
+        self.mask_hot_pixels_checkbox = QtGui.QCheckBox('Mask hot pixels')
+        layout.addWidget(self.mask_hot_pixels_checkbox, 0, 2, 1, 1)
+        mask_hot_pixels_spinbox = QtGui.QDoubleSpinBox()
+        mask_hot_pixels_spinbox.setRange(0.0, 100.0)
+        mask_hot_pixels_spinbox.setValue(10.0)
+        mask_hot_pixels_spinbox.setSingleStep(1.0)
+        mask_hot_pixels_spinbox.setDecimals(1)
+        mask_hot_pixels_spinbox.setPrefix('> ')
+        mask_hot_pixels_spinbox.setSuffix(' x avg. center occupancy')
+        layout.addWidget(mask_hot_pixels_spinbox, 0, 3, 1, 1)
         self.transpose_checkbox = QtGui.QCheckBox('Transpose columns and rows (FE-I4)')
         layout.addWidget(self.transpose_checkbox, 1, 3, 1, 1)
         self.convert_checkbox = QtGui.QCheckBox('Axes in ' + u'\u03BC' + 'm')
@@ -172,15 +199,18 @@ class HitCorrelator(Receiver):
         # function to set rm hot pixel flag and set factor
         def config_hot_pixels():
 
-            if rm_hot_pixels_checkbox.isChecked():
-                self.factor = rm_hot_pixels_spinbox.value()
-                self.rm_hot_pixels = True
+            if self.mask_hot_pixels_checkbox.isChecked():
+                self.factor = mask_hot_pixels_spinbox.value()
+                self.mask_hot_pixels = True
+                self.have_mask_row = False
+                self.have_mask_col = False
 
             else:
-                self.rm_hot_pixels = False
+                self.mask_hot_pixels = False
+                self.mask_hot_pixels_checkbox.setText('Mask hot pixels')
 
-        rm_hot_pixels_checkbox.stateChanged.connect(config_hot_pixels)
-        rm_hot_pixels_spinbox.valueChanged.connect(config_hot_pixels)
+        self.mask_hot_pixels_checkbox.stateChanged.connect(config_hot_pixels)
+        mask_hot_pixels_spinbox.valueChanged.connect(config_hot_pixels)
 
         # function to label and scale axis in um
         def scale_and_label_axes(scale_state, dut1, dut2, dut1_name, dut2_name, transpose_state):
@@ -361,53 +391,141 @@ class HitCorrelator(Receiver):
 
                 if 'column' == key:
 
-                    self.occupancy_image_columns.setImage(data[key][:, :], autoDownsample=True)
+                    if self.mask_hot_pixels:
 
-                    if self.rm_hot_pixels:
+                        # if we dont have a mask for the current confuguration yet, make one
+                        if not self.have_mask_col:
 
-                        occ_upper_mean, occ_max = noisy_calc(self.occupancy_image_columns.image)
+                            # get mean center occupancy and maximum occupancy
+                            occ_upper_mean, occ_max = hot_threshold_calc(self.occupancy_image_columns.image)
 
-                        if occ_max > (self.factor * occ_upper_mean):
+                            if occ_max > (self.factor * occ_upper_mean):
 
-                            # make another copy of occupancy to change its entries;
-                            occupancy = self.occupancy_image_columns.image.copy()
+                                # get data and mask
+                                occupancy = np.ma.masked_where(
+                                    self.occupancy_image_columns.image > (self.factor * occ_upper_mean),
+                                    self.occupancy_image_columns.image)
+                                self.mask_col = np.ma.getmask(occupancy)
 
-                            # remove every pixel with a occupancy higher than this factor times the mean
-                            occupancy[occupancy > (self.factor * occ_upper_mean)] = 0
+#                                # get masked data and mask
+#                                masked_data, self.mask_col = hot_mask_calc(self.occupancy_image_columns,
+#                                                                           self.factor,
+#                                                                           occ_upper_mean)
 
-                            # clear occupancy image
-                            self.occupancy_image_columns.clear()
+                                # if we have a mask, count masked pixels
+                                if self.mask_col is not None:
+                                    self.have_mask_col = True
+                                    self.hot_pixels_col = np.count_nonzero(self.mask_col)
 
-                            # set new occupancy; free from hot pixels
-                            self.occupancy_image_columns.setImage(occupancy, autoDownsample=True)
+                                # extract data and mask
+                                masked_data = occupancy.data
+                                masked_data[self.mask_col] = 0
+
+                                # clear occupancy image
+                                self.occupancy_image_columns.clear()
+
+                                # set new occupancy; free from masked pixels
+                                self.occupancy_image_columns.setImage(masked_data, autoDownsample=True)
+
+                            else:
+                                # we dont have a mask but we dont need one since no pixels are masked
+                                self.hot_pixels_col = 0
+
+                                # plot
+                                self.occupancy_image_columns.setImage(data[key][:, :], autoDownsample=True)
 
                         else:
-                            pass
+                            # plot data with static mask
+                            mask_data = data[key][:, :]
+
+                            # be able to overwrite entries in input data
+                            mask_data.setflags(write=1)
+
+                            # apply mask
+                            mask_data[self.mask_col] = 0
+
+                            # plot
+                            self.occupancy_image_columns.setImage(mask_data, autoDownsample=True)
+
+                    else:
+                        # reset if we stopped masking pixels in plots once; skip if we not have masked at all
+                        if self.mask_col is not None:
+                            self.mask_col = None
+                            self.have_mask_col = False
+
+                        # plot without masking
+                        self.occupancy_image_columns.setImage(data[key][:, :], autoDownsample=True)
 
                 if 'row' == key:
 
-                    self.occupancy_image_rows.setImage(data[key][:, :], autoDownsample=True)
+                    if self.mask_hot_pixels:
 
-                    if self.rm_hot_pixels:
+                        # if we dont have a mask for the current confuguration yet, make one
+                        if not self.have_mask_row:
 
-                        occ_upper_mean, occ_max = noisy_calc(self.occupancy_image_rows.image)
+                            # get mean center occupancy and maximum occupancy
+                            occ_upper_mean, occ_max = hot_threshold_calc(self.occupancy_image_rows.image)
 
-                        if occ_max > (self.factor * occ_upper_mean):
+                            if occ_max > (self.factor * occ_upper_mean):
 
-                            # make another copy of occupancy to change its entries;
-                            occupancy = self.occupancy_image_rows.image.copy()
+                                # get data and mask
+                                occupancy = np.ma.masked_where(
+                                    self.occupancy_image_rows.image > (self.factor * occ_upper_mean),
+                                    self.occupancy_image_rows.image)
+                                self.mask_row = np.ma.getmask(occupancy)
 
-                            # remove every pixel with a occupancy higher than this factor times the mean
-                            occupancy[occupancy > (self.factor * occ_upper_mean)] = 0
+#                                # get masked data and mask
+#                                masked_data, self.mask_row = hot_mask_calc(self.occupancy_image_rows,
+#                                                                           self.factor,
+#                                                                           occ_upper_mean)
 
-                            # clear occupancy image
-                            self.occupancy_image_rows.clear()
+                                # if we have a mask, count masked pixels
+                                if self.mask_row is not None:
+                                    self.have_mask_row = True
+                                    self.hot_pixels_row = np.count_nonzero(self.mask_row)
 
-                            # set new occupancy; free from hot pixels
-                            self.occupancy_image_rows.setImage(occupancy, autoDownsample=True)
+                                # extract data and mask
+                                masked_data = occupancy.data
+                                masked_data[self.mask_row] = 0
 
+                                # clear occupancy image
+                                self.occupancy_image_rows.clear()
+
+                                # set new occupancy; free from masked pixels
+                                self.occupancy_image_rows.setImage(masked_data, autoDownsample=True)
+
+                            else:
+                                # we dont have a mask but we dont need one since no pixels are masked
+                                self.hot_pixels_row = 0
+
+                                # plot
+                                self.occupancy_image_rows.setImage(data[key][:, :], autoDownsample=True)
                         else:
-                            pass
+                            # plot data with static mask
+                            mask_data = data[key][:, :]
+
+                            # be able to overwrite entries in input data
+                            mask_data.setflags(write=1)
+
+                            # apply mask
+                            mask_data[self.mask_row] = 0
+
+                            # plot
+                            self.occupancy_image_rows.setImage(mask_data, autoDownsample=True)
+                    else:
+                        # reset if we stopped masking pixels in plots once; skip if we not have masked at all
+                        if self.mask_row is not None:
+                            self.mask_row = None
+                            self.have_mask_row = False
+
+                        # plot without masking
+                        self.occupancy_image_rows.setImage(data[key][:, :], autoDownsample=True)
+
+            # show amount of masked pixels in GUI
+            if self.mask_hot_pixels:
+                self.mask_hot_pixels_checkbox.setText('Masking (%i column plot, %i row plot) pixels'
+                                                      % (self.hot_pixels_col, self.hot_pixels_row))
+
 
         else:
             self.rate_label.setText('Readout Rate: %d Hz' % data['meta_data']['fps'])
