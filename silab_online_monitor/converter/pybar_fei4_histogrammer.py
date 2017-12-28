@@ -1,4 +1,4 @@
-''' Histograms the ATLAS-FEI4 hit table and integrated the interpretation histograms'''
+''' Histograms the ATLAS-FEI4 hit table and integrates histograms'''
 
 from zmq.utils import jsonapi
 import numpy as np
@@ -14,7 +14,9 @@ from pybar_fei4_interpreter.data_histograming import PyDataHistograming
 class PybarFEI4Histogrammer(Transceiver):
 
     def setup_transceiver(self):
-        self.set_bidirectional_communication()  # We want to be able to change the histogrammmer settings
+        # We want to be able to change the histogrammmer settings
+        # thus bidirectional communication needed
+        self.set_bidirectional_communication()
 
     def setup_interpretation(self):
         self.histograming = PyDataHistograming()
@@ -36,8 +38,8 @@ class PybarFEI4Histogrammer(Transceiver):
         # Histogrammes from interpretation stored for summing
         self.tdc_counters = None
         self.error_counters = None
-        self.service_records_counters = None
-        self.trigger_error_counters = None
+        self.sr_counters = None
+        self.trig_err_counters = None
 
     def deserialze_data(self, data):
         # return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
@@ -49,22 +51,30 @@ class PybarFEI4Histogrammer(Transceiver):
 
     def interpret_data(self, data):
 
-        if 'meta_data' in data[0][1]:  # Meta data is directly forwarded to the receiver, only hit data, event counters are histogramed; 0 from frontend index, 1 for data dict
+        # Meta data is directly forwarded to the receiver, only hit data and
+        # event counters are histogramed; index 0 for frontend index, 1
+        # 1 for data dict
+        if 'meta_data' in data[0][1]:
             meta_data = data[0][1]['meta_data']
             try:
                 now = float(meta_data['timestamp_stop'])
                 recent_total_hits = meta_data['n_hits']
                 recent_total_events = meta_data['n_events']
                 recent_fps = 1.0 / (now - self.updateTime)  # calculate FPS
-                recent_hps = (recent_total_hits - self.total_hits) / (now - self.updateTime)
-                recent_eps = (recent_total_events - self.total_events) / (now - self.updateTime)
+                delta_hits = recent_total_hits - self.total_hits
+                recent_hps = delta_hits / (now - self.updateTime)
+                delta_events = recent_total_events - self.total_events
+                recent_eps = delta_events / (now - self.updateTime)
                 self.updateTime = now
                 self.total_hits = recent_total_hits
                 self.total_events = recent_total_events
                 self.fps = self.fps * 0.7 + recent_fps * 0.3
                 self.hps = self.hps + (recent_hps - self.hps) * 0.3 / self.fps
                 self.eps = self.eps + (recent_eps - self.eps) * 0.3 / self.fps
-                meta_data.update({'fps': self.fps, 'hps': self.hps, 'total_hits': self.total_hits, 'eps': self.eps, 'total_events': self.total_events})
+                meta_data.update({'fps': self.fps, 'hps': self.hps,
+                                  'total_hits': self.total_hits,
+                                  'eps': self.eps,
+                                  'total_events': self.total_events})
                 return [data[0][1]]
             except KeyError:
                 import logging
@@ -77,8 +87,8 @@ class PybarFEI4Histogrammer(Transceiver):
                 self.histograming.reset()
                 self.tdc_counters = np.zeros_like(self.tdc_counters)
                 self.error_counters = np.zeros_like(self.error_counters)
-                self.service_records_counters = np.zeros_like(self.service_records_counters)
-                self.trigger_error_counters = np.zeros_like(self.trigger_error_counters)
+                self.sr_counters = np.zeros_like(self.sr_counters)
+                self.trig_err_counters = np.zeros_like(self.trig_err_counters)
                 self.readouts = 0
 
         interpreted_data = data[0][1]
@@ -89,27 +99,31 @@ class PybarFEI4Histogrammer(Transceiver):
         if self.tdc_counters is not None:
             self.tdc_counters += interpreted_data['tdc_counters']
         else:
-            self.tdc_counters = interpreted_data['tdc_counters'].copy()  # Copy needed to give ownage to histogrammer
+            # Copy needed to give ownage to histogrammer
+            self.tdc_counters = interpreted_data['tdc_counters'].copy()
         if self.error_counters is not None:
             self.error_counters += interpreted_data['error_counters']
         else:
-            self.error_counters = interpreted_data['error_counters'].copy()  # Copy needed to give ownage to histogrammer
-        if self.service_records_counters is not None:
-            self.service_records_counters += interpreted_data['service_records_counters']
+            # Copy needed to give ownage to histogrammer
+            self.error_counters = interpreted_data['error_counters'].copy()
+        if self.sr_counters is not None:
+            self.sr_counters += interpreted_data['service_records_counters']
         else:
-            self.service_records_counters = interpreted_data['service_records_counters'].copy()  # Copy needed to give ownage to histogrammer
-        if self.trigger_error_counters is not None:
-            self.trigger_error_counters += interpreted_data['trigger_error_counters']
+            # Copy needed to give ownage to histogrammer
+            self.sr_counters = interpreted_data['service_records_counters'].copy()
+        if self.trig_err_counters is not None:
+            self.trig_err_counters += interpreted_data['trigger_error_counters']
         else:
-            self.trigger_error_counters = interpreted_data['trigger_error_counters'].copy()  # Copy needed to give ownage to histogrammer
+            # Copy needed to give ownage to histogrammer
+            self.trig_err_counters = interpreted_data['trigger_error_counters'].copy()
 
         histogrammed_data = {
             'occupancy': self.histograming.get_occupancy(),
             'tot_hist': self.histograming.get_tot_hist(),
             'tdc_counters': self.tdc_counters,
             'error_counters': self.error_counters,
-            'service_records_counters': self.service_records_counters,
-            'trigger_error_counters': self.trigger_error_counters,
+            'service_records_counters': self.sr_counters,
+            'trigger_error_counters': self.trig_err_counters,
             'rel_bcid_hist': self.histograming.get_rel_bcid_hist()
         }
 
@@ -130,7 +144,7 @@ class PybarFEI4Histogrammer(Transceiver):
             self.histograming.reset()
             self.tdc_counters = np.zeros_like(self.tdc_counters)
             self.error_counters = np.zeros_like(self.error_counters)
-            self.service_records_counters = np.zeros_like(self.service_records_counters)
-            self.trigger_error_counters = np.zeros_like(self.trigger_error_counters)
+            self.sr_counters = np.zeros_like(self.sr_counters)
+            self.trig_err_counters = np.zeros_like(self.trig_err_counters)
         else:
             self.n_readouts = int(command[0])

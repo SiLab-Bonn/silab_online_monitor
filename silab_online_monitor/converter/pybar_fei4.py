@@ -23,18 +23,24 @@ class PybarFEI4(Transceiver):
                 shape = self.meta_data.pop('shape')
                 if self.meta_data:
                     try:
-                        raw_data_array = np.frombuffer(buffer(data), dtype=dtype).reshape(shape)
+                        raw_data_array = np.frombuffer(buffer(data),
+                                                       dtype=dtype).reshape(shape)
                         return raw_data_array
-                    except (KeyError, ValueError):  # KeyError happens if meta data read is omitted; ValueError if np.frombuffer fails due to wrong sha
+                    # KeyError happens if meta data read is omitted; ValueError
+                    # if np.frombuffer fails due to wrong shape
+                    except (KeyError, ValueError):
                         return None
             except AttributeError:  # Happens if first data is not meta data
                 return None
         return {'meta_data': self.meta_data}
 
     def interpret_data(self, data):
-        if isinstance(data[0][1], dict):  # Meta data is omitted, only raw data is interpreted
+        # Meta data is omitted, only raw data is interpreted
+        if isinstance(data[0][1], dict):
             # Add info to meta data
-            data[0][1]['meta_data'].update({'n_hits': self.interpreter.get_n_hits(), 'n_events': self.interpreter.get_n_events()})
+            data[0][1]['meta_data'].update(
+                {'n_hits': self.interpreter.get_n_hits(),
+                 'n_events': self.interpreter.get_n_events()})
             return [data[0][1]]
 
         # For the summing of histograms the histogrammer converter is used

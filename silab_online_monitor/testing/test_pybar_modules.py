@@ -100,9 +100,11 @@ class TestOnlineMonitor(unittest.TestCase):
             cls.vdisplay = Xvfb()
             cls.vdisplay.start()
         # Start the simulation producer to create some fake data
-        cls.producer_sim_process = run_script_in_shell('', 'tmp_cfg.yml', 'start_producer_sim')
+        cls.producer_sim_process = run_script_in_shell('', 'tmp_cfg.yml',
+                                                       'start_producer_sim')
         # Start converter
-        cls.converter_manager_process = run_script_in_shell('', 'tmp_cfg.yml', command='start_converter')
+        cls.converter_manager_process = run_script_in_shell('', 'tmp_cfg.yml',
+                                                            command='start_converter')
         # Create Gui
         time.sleep(2)
         cls.app = QApplication(sys.argv)
@@ -121,11 +123,14 @@ class TestOnlineMonitor(unittest.TestCase):
 
     def test_receiver(self):
         self.app.processEvents()
-        self.assertEqual(len(self.online_monitor.receivers), 2, 'Number of receivers wrong')
+        self.assertEqual(len(self.online_monitor.receivers), 2,
+                         'Number of receivers wrong')
         self.app.processEvents()  # Clear event queue
         # Activate status widget, no data should be received
         self.online_monitor.tab_widget.setCurrentIndex(0)
-        self.app.processEvents()  # Event loop does not run in tests, thus we have to trigger the event queue manually
+        # Event loop does not run in tests, thus we have to trigger the event
+        # queue manually
+        self.app.processEvents()
         time.sleep(1)
         self.app.processEvents()
         time.sleep(0.2)
@@ -161,7 +166,9 @@ class TestOnlineMonitor(unittest.TestCase):
 
     #  Test the Ui
     def test_ui(self):
-        self.assertEqual(self.online_monitor.tab_widget.count(), 3, 'Number of tab widgets wrong')  # 2 receiver + status widget expected
+        # 2 receiver + status widget expected
+        self.assertEqual(self.online_monitor.tab_widget.count(), 3,
+                         'Number of tab widgets wrong')
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestOnlineMonitor)
