@@ -54,7 +54,7 @@ class TelescopeStatus(Transceiver):
 
         self.prev_timestamp = 0
 
-    def deserialze_data(self, data):  # According to pyBAR data serilization
+    def deserialize_data(self, data):  # According to pyBAR data serilization
 
         datar, meta = utils.simple_dec(data)
         if 'hits' in meta:
@@ -128,7 +128,7 @@ class TelescopeStatus(Transceiver):
             else:
                 pass
 
-    def serialze_data(self, data):
+    def serialize_data(self, data):
 
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 

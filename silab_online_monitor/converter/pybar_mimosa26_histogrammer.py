@@ -43,7 +43,7 @@ class PybarMimosa26Histogrammer(Transceiver):
 #         self.error_counters = None
 #         self.trigger_error_counters = None
 
-    def deserialze_data(self, data):
+    def deserialize_data(self, data):
         # return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
         datar, meta = utils.simple_dec(data)
         if 'hits' in meta:
@@ -104,7 +104,7 @@ class PybarMimosa26Histogrammer(Transceiver):
 
         return [histogrammed_data]
 
-    def serialze_data(self, data):
+    def serialize_data(self, data):
         # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 
         if 'occupancies' in data:

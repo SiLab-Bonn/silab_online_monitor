@@ -379,7 +379,7 @@ class HitCorrelator(Receiver):
                                                                           self.combobox2.currentText(),
                                                                           value))
 
-    def deserialze_data(self, data):
+    def deserialize_data(self, data):
 
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 

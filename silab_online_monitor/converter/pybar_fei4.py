@@ -14,7 +14,7 @@ class PybarFEI4(Transceiver):
         self.interpreter = PyDataInterpreter()
         self.interpreter.set_warning_output(False)
 
-    def deserialze_data(self, data):  # According to pyBAR data serilization
+    def deserialize_data(self, data):  # According to pyBAR data serilization
         try:
             self.meta_data = jsonapi.loads(data)
         except ValueError:
@@ -57,7 +57,7 @@ class PybarFEI4(Transceiver):
 
         return [interpreted_data]
 
-    def serialze_data(self, data):
+    def serialize_data(self, data):
         # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
         if 'hits' in data:
             hits_data = data['hits']

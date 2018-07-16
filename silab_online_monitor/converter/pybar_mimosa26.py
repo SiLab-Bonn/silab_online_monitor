@@ -15,7 +15,7 @@ class PybarMimosa26(Transceiver):
         self.n_hits = 0
         self.n_events = 0
 
-    def deserialze_data(self, data):  # According to pyBAR data serilization
+    def deserialize_data(self, data):  # According to pyBAR data serilization
         try:
             self.meta_data = jsonapi.loads(data)
         except ValueError:
@@ -49,7 +49,7 @@ class PybarMimosa26(Transceiver):
         # self.interpreter.reset_histograms()  # Not implemented yet
         return [interpreted_data]
 
-    def serialze_data(self, data):
+    def serialize_data(self, data):
         # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
 
         if 'hits' in data:

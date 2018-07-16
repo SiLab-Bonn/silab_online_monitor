@@ -430,7 +430,7 @@ class TelescopeStatus(Receiver):
         dock_area.addDock(dock_fei4, 'bottom', dock_status_fei4)
         dock_area.addDock(dock_min_max_vals, 'bottom')
 
-    def deserialze_data(self, data):
+    def deserialize_data(self, data):
 
         return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
 

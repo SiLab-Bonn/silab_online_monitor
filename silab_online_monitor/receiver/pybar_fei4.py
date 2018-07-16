@@ -131,7 +131,7 @@ class PybarFEI4(Receiver):
 
         self.plot_delay = 0
 
-    def deserialze_data(self, data):
+    def deserialize_data(self, data):
         datar, meta = utils.simple_dec(data)
         if 'occupancies' in meta:
             meta['occupancies'] = datar

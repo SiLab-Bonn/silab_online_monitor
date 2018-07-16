@@ -16,7 +16,7 @@ class MultichipSplitter(Transceiver):
         self.interpreter = PyDataInterpreter()
         self.interpreter.set_warning_output(False)
 
-    def deserialze_data(self, data):  # According to pyBAR data serilization
+    def deserialize_data(self, data):  # According to pyBAR data serilization
         try:
             self.meta_data = jsonapi.loads(data)
         except ValueError:
@@ -34,7 +34,7 @@ class MultichipSplitter(Transceiver):
         return {'meta_data': self.meta_data}
 
     def interpret_data(self, data):
-        if isinstance(data[0][1], dict):  # Meta data is saved in deserialze_data for next raw data send
+        if isinstance(data[0][1], dict):  # Meta data is saved in deserialize_data for next raw data send
             return
 
         raw_data = data[0][1].copy()  
@@ -67,7 +67,7 @@ class MultichipSplitter(Transceiver):
             
         return splitted_data
         
-    def serialze_data(self, data):
+    def serialize_data(self, data):
         return np.zeros(10)
         #return jsonapi.dumps(data, cls=utils.NumpyEncoder)
         if 'hits' in data:

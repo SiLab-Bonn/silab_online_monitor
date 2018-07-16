@@ -50,7 +50,7 @@ class HitCorrelator(Transceiver):
 #       self.n = 1.0
 #       self.avg_ram = 0
 
-    def deserialze_data(self, data):  # According to pyBAR data serialization
+    def deserialize_data(self, data):  # According to pyBAR data serialization
 
         datar, meta = utils.simple_dec(data)
         if 'hits' in meta:
@@ -230,7 +230,7 @@ class HitCorrelator(Transceiver):
         else:
             return
 
-    def serialze_data(self, data):
+    def serialize_data(self, data):
 
         return jsonapi.dumps(data, cls=utils.NumpyEncoder)
         # return utils.simple_enc(None, data)

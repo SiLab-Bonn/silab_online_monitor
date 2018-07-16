@@ -61,7 +61,7 @@ class BeastHistogrammer(Transceiver):
 #        self.tdc_counters = [None] * 4096
         
         
-    def deserialze_data(self, data):
+    def deserialize_data(self, data):
         # return jsonapi.loads(data, object_hook=utils.json_numpy_obj_hook)
         datar, meta = utils.simple_dec(data)  # meta is a list
         if 'hits' in meta:
@@ -164,7 +164,7 @@ class BeastHistogrammer(Transceiver):
                              'tot_hist': self.tot_hist}
         return [histogrammed_data]
             
-    def serialze_data(self, data):
+    def serialize_data(self, data):
         # return jsonapi.dumps(data, cls=utils.NumpyEncoder)
         
         if 'occupancies' in data:
