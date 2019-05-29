@@ -24,7 +24,7 @@ class PybarFEI4Histogrammer(Transceiver):
         self.histograming.create_occupancy_hist(True)
         self.histograming.create_rel_bcid_hist(True)
         self.histograming.create_tot_hist(True)
-        self.histograming.create_tdc_hist(True)
+        self.histograming.create_tdc_value_hist(True)
         # Variables
         self.n_readouts = 0
         self.readout = 0

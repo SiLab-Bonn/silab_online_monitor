@@ -49,10 +49,10 @@ class PybarFEI4(Transceiver):
 
         interpreted_data = {
             'hits': self.interpreter.get_hits(),
-            'tdc_counters': self.interpreter.get_tdc_counters(),
-            'error_counters': self.interpreter.get_error_counters(),
+            'tdc_counters': self.interpreter.get_tdc_values(),
+            'error_counters': self.interpreter.get_event_status_counters(),
             'service_records_counters': self.interpreter.get_service_records_counters(),
-            'trigger_error_counters': self.interpreter.get_trigger_error_counters(),
+            'trigger_error_counters': self.interpreter.get_trigger_status_counters(),
         }
 
         return [interpreted_data]
