@@ -24,7 +24,7 @@ class PybarMimosa26(Transceiver):
                 shape = self.meta_data.pop('shape')
                 if self.meta_data:
                     try:
-                        raw_data_array = np.frombuffer(buffer(data), dtype=dtype).reshape(shape)
+                        raw_data_array = np.frombuffer(data, dtype=dtype).reshape(shape)
                         return raw_data_array
                     except (KeyError, ValueError):  # KeyError happens if meta data read is omitted; ValueError if np.frombuffer fails due to wrong sha
                         return None

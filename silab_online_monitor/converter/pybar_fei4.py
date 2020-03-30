@@ -23,7 +23,7 @@ class PybarFEI4(Transceiver):
                 shape = self.meta_data.pop('shape')
                 if self.meta_data:
                     try:
-                        raw_data_array = np.frombuffer(buffer(data),
+                        raw_data_array = np.frombuffer(data,
                                                        dtype=dtype).reshape(shape)
                         return raw_data_array
                     # KeyError happens if meta data read is omitted; ValueError

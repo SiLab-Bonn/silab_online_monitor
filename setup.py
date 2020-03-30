@@ -22,6 +22,7 @@ setup(
     author_email=author_email,
     maintainer_email=author_email,
     install_requires=install_requires,
+    setup_requires=['online_monitor>=0.4.0<0.5'],
     packages=find_packages(),
     include_package_data=True,  # accept all data files and directories matched by MANIFEST.in or found in source control
     package_data={'': ['README.*', 'VERSION'], 'docs': ['*'], 'examples': ['*']},
