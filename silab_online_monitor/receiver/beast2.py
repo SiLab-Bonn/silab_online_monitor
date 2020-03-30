@@ -139,7 +139,7 @@ class Beast(Receiver):
             self.event_curves[i].setData(data['time'],data['eps_array'].T[i],autoDownsample=True )
         
 #         self.timestamp_label.setText("Data Timestamp\n%s" % time.asctime(time.localtime(data['time_stamp'])))
-#         self.scan_parameter_label.setText("Scan Parameters\n%s" % ', '.join('%s: %s' % (str(key), str(val)) for key, val in data['meta_data']['scan_parameters'].iteritems()))
+#         self.scan_parameter_label.setText("Scan Parameters\n%s" % ', '.join('%s: %s' % (str(key), str(val)) for key, val in data['meta_data']['scan_parameters'].items()))
 #         now = ptime.time()
 #         self.plot_delay = self.plot_delay * 0.9 + (now - data['time_stamp']) * 0.1
 #         self.plot_delay_label.setText("Plot Delay\n%s" % 'not realtime' if abs(self.plot_delay) > 5 else "%1.2f ms" % (self.plot_delay * 1.e3))       
